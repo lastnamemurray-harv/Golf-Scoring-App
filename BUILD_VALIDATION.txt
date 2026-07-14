@@ -1,0 +1,7 @@
+Validation date: 2026-07-14
+Command: npm run build
+Result: PASS
+Vite production build completed successfully.
+PWA service worker generated successfully.
+Bundled course records: 74
+Bundled verified hole records: 270
