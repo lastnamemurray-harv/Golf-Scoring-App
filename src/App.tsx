@@ -18,7 +18,7 @@ import AnalyticsView from './components/AnalyticsView'
 import Settings from './components/Settings'
 import SyncBadge from './components/SyncBadge'
 import BrandMark from './components/BrandMark'
-import CelebrationFlyover from './components/CelebrationFlyover'
+import ScorePosterFlash, { type ScorePosterKind } from './components/ScorePosterFlash'
 import { formatToPar } from './lib/analytics'
 
 function calculateRound(round: Round, holes: HoleResult[]): Round {
@@ -56,7 +56,8 @@ export default function App() {
   const [scorecardReturn, setScorecardReturn] = useState<'round' | 'history' | 'home' | 'analytics'>('history')
   const [syncState, setSyncState] = useState<SyncState>('local-only')
   const [cloudMessage, setCloudMessage] = useState<string | null>(null)
-  const [celebration, setCelebration] = useState<{ kind: 'birdie' | 'eagle' | 'bogey' | 'double_bogey'; id: number } | null>(null)
+  const [scorePoster, setScorePoster] = useState<ScorePosterKind | null>(null)
+  const [isAdvancing, setIsAdvancing] = useState(false)
 
   useEffect(() => {
     initializeAppData().then(async (data) => {
@@ -89,12 +90,6 @@ export default function App() {
     }
   }, [])
 
-
-  useEffect(() => {
-    if (!celebration) return
-    const timer = window.setTimeout(() => setCelebration(null), 7200)
-    return () => window.clearTimeout(timer)
-  }, [celebration])
 
   const activeHole = holes[holeIndex]
   const completedCount = useMemo(() => holes.filter((hole) => hole.score != null).length, [holes])
@@ -139,17 +134,41 @@ export default function App() {
   }
 
 
+  function getScorePosterKind(hole: HoleResult): ScorePosterKind | null {
+    if (hole.score == null || hole.par == null) return null
+    if (hole.score === 8) return 'snowman'
+    const relative = hole.score - hole.par
+    if (relative <= -3) return 'albatross'
+    if (relative === -2) return 'eagle'
+    if (relative === -1) return 'birdie'
+    if (relative === 0) return 'par'
+    if (relative === 1) return 'bogey'
+    if (relative === 2) return 'double_bogey'
+    if (relative >= 3) return 'meltdown'
+    return null
+  }
+
+
   function advanceHole() {
-    if (activeHole?.score != null && activeHole.par != null) {
-      const relative = activeHole.score - activeHole.par
-      if (relative <= -2) setCelebration({ kind: 'eagle', id: Date.now() })
-      else if (relative === -1) setCelebration({ kind: 'birdie', id: Date.now() })
-      else if (relative >= 2) setCelebration({ kind: 'double_bogey', id: Date.now() })
-      else if (relative === 1) setCelebration({ kind: 'bogey', id: Date.now() })
+    if (!activeHole || isAdvancing) return
+
+    const nextHole = () => {
+      setScorePoster(null)
+      setHoleIndex((index) => Math.min(holes.length - 1, index + 1))
+      setIsAdvancing(false)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+
     void persistRound()
-    setHoleIndex((index) => Math.min(holes.length - 1, index + 1))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    const posterKind = getScorePosterKind(activeHole)
+    if (!posterKind) {
+      nextHole()
+      return
+    }
+
+    setIsAdvancing(true)
+    setScorePoster(posterKind)
+    window.setTimeout(nextHole, 1000)
   }
 
   async function finishRound() {
@@ -289,6 +308,7 @@ export default function App() {
       onPrevious={() => { void persistRound(); setHoleIndex((index) => Math.max(0, index - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
       onNext={advanceHole}
       onFinish={finishRound}
+      transitioning={isAdvancing}
     />}
 
     {screen === 'scorecard' && scorecardRound && <ScorecardView
@@ -326,6 +346,6 @@ export default function App() {
       <button className={screen === 'history' ? 'active' : ''} onClick={() => setScreen('history')}><span>▤</span>History</button>
       <button className={screen === 'settings' ? 'active' : ''} onClick={() => setScreen('settings')}><span>⚙</span>Settings</button>
     </nav>}
-    {celebration && <CelebrationFlyover kind={celebration.kind} animationKey={celebration.id} />}
+    {scorePoster && <ScorePosterFlash kind={scorePoster} />}
   </div>
 }

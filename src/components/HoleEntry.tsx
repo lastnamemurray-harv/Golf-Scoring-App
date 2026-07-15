@@ -40,11 +40,12 @@ interface Props {
   onFinish: () => void
   onHome: () => void
   onScorecard: () => void
+  transitioning?: boolean
 }
 
 export default function HoleEntry({
   round, hole, holeIndex, totalHoles, settings, syncState, cumulativeToPar,
-  onChange, onPrevious, onNext, onFinish, onHome, onScorecard,
+  onChange, onPrevious, onNext, onFinish, onHome, onScorecard, transitioning = false,
 }: Props) {
   const enteringPoint = hole.entering_zone_actual == null || hole.entering_zone_target == null
     ? null
@@ -241,8 +242,8 @@ export default function HoleEntry({
       <div className="round-actions">
         <button type="button" className="secondary" disabled={holeIndex === 0} onClick={onPrevious}>Previous</button>
         {holeIndex === totalHoles - 1
-          ? <button type="button" className="primary" onClick={onFinish}>Finish round</button>
-          : <button type="button" className="primary" onClick={onNext}>Save & next</button>}
+          ? <button type="button" className="primary" disabled={transitioning} onClick={onFinish}>Finish round</button>
+          : <button type="button" className="primary" disabled={transitioning} onClick={onNext}>{transitioning ? 'Loading…' : 'Save & next'}</button>}
       </div>
     </main>
   )

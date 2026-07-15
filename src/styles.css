@@ -454,3 +454,25 @@ h1,h2,h3,p { margin:0; } h1,h2,h3,.roundwise-brand strong { font-family:"Montser
   .celebration-flyover { left:50%; transform:translateX(-50%); animation:roundwise-celebration-fade 6s ease forwards; }
   @keyframes roundwise-celebration-fade { 0%{opacity:0} 20%,75%{opacity:1} 100%{opacity:0} }
 }
+
+
+/* RoundWise v0.11 — score posters between holes */
+.score-poster-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(7, 15, 30, 0.72);
+  pointer-events: none;
+}
+.score-poster-flash img {
+  display: block;
+  width: min(94vw, 430px);
+  max-height: 94vh;
+  object-fit: contain;
+  border-radius: 22px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+}
