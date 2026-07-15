@@ -1,15 +1,16 @@
 import seedData from '../data/seedCourses.json'
-import type { Course, CourseHole, HoleResult, ImportedCourseDraft, MetricConfig, Round, SyncState } from '../types'
+import type { Course, CourseHole, CourseTee, HoleResult, ImportedCourseDraft, MetricConfig, Round, SyncState } from '../types'
 import { DEFAULT_METRICS, DEFAULT_PLAYERS } from '../types'
 import { ensureAnonymousSession, isCloudConfigured, supabase } from './supabase'
 import {
-  clearPendingRoundDelete, deleteLocalRound, getActiveRoundId, loadCourseHoles, loadCourses, loadLocalHoleResults, loadPendingRoundDeletes, loadRounds, loadSettings,
-  queuePendingRoundDelete, saveCourseHoles, saveCourses, saveLocalHoleResults, saveSettings, setActiveRoundId, upsertLocalRound,
+  clearPendingRoundDelete, deleteLocalRound, getActiveRoundId, loadCourseHoles, loadCourseTees, loadCourses, loadLocalHoleResults, loadPendingRoundDeletes, loadRounds, loadSettings,
+  queuePendingRoundDelete, saveCourseHoles, saveCourseTees, saveCourses, saveLocalHoleResults, saveSettings, setActiveRoundId, upsertLocalRound,
 } from './localDb'
 
 export interface AppData {
   courses: Course[]
   courseHoles: CourseHole[]
+  courseTees: CourseTee[]
   rounds: Round[]
   settings: MetricConfig
   activeRoundId: string | null
@@ -38,11 +39,18 @@ export function normalizeHole(hole: HoleResult): HoleResult {
 export async function initializeAppData(): Promise<AppData> {
   let courses = await loadCourses()
   let courseHoles = await loadCourseHoles()
+  let courseTees = await loadCourseTees()
   if (!courses.length) {
     courses = seedData.courses as Course[]
-    courseHoles = seedData.course_holes as CourseHole[]
     await saveCourses(courses)
+  }
+  if (!courseHoles.length) {
+    courseHoles = seedData.course_holes as CourseHole[]
     await saveCourseHoles(courseHoles)
+  }
+  if (!courseTees.length) {
+    courseTees = seedData.course_tees as CourseTee[]
+    await saveCourseTees(courseTees)
   }
 
   let cloudUserId: string | null = null
@@ -54,18 +62,22 @@ export async function initializeAppData(): Promise<AppData> {
         const { error: deleteError } = await supabase.from('rounds').delete().eq('id', roundId)
         if (!deleteError) await clearPendingRoundDelete(roundId)
       }
-      const [{ data: cloudCourses, error: courseError }, { data: cloudHoles, error: holeError }, { data: cloudRounds, error: roundsError }] = await Promise.all([
+      const [{ data: cloudCourses, error: courseError }, { data: cloudHoles, error: holeError }, { data: cloudTees, error: teeError }, { data: cloudRounds, error: roundsError }] = await Promise.all([
         supabase.from('courses').select('*'),
         supabase.from('course_holes').select('*'),
+        supabase.from('course_tees').select('*'),
         supabase.from('rounds').select('*').order('started_at', { ascending: false }),
       ])
       if (courseError) throw courseError
       if (holeError) throw holeError
+      if (teeError) throw teeError
       if (roundsError) throw roundsError
       courses = mergeById(courses, (cloudCourses ?? []) as Course[])
       courseHoles = mergeById(courseHoles, (cloudHoles ?? []) as CourseHole[])
+      courseTees = mergeById(courseTees, (cloudTees ?? []) as CourseTee[])
       await saveCourses(courses)
       await saveCourseHoles(courseHoles)
+      await saveCourseTees(courseTees)
       if (cloudRounds?.length) {
         for (const rawRound of cloudRounds as Round[]) await upsertLocalRound(normalizeRound(rawRound))
       }
@@ -82,6 +94,7 @@ export async function initializeAppData(): Promise<AppData> {
   return {
     courses,
     courseHoles,
+    courseTees,
     rounds: localRounds,
     settings: await loadSettings(),
     activeRoundId: await getActiveRoundId(),
@@ -105,7 +118,7 @@ export async function saveMetricSettings(settings: MetricConfig): Promise<SyncSt
   }
 }
 
-export async function saveImportedCourse(draft: ImportedCourseDraft): Promise<{ course: Course; holes: CourseHole[]; sync: SyncState }> {
+export async function saveImportedCourse(draft: ImportedCourseDraft): Promise<{ course: Course; tee: CourseTee; holes: CourseHole[]; sync: SyncState }> {
   const id = crypto.randomUUID()
   const courseKey = `${draft.name} — ${draft.tee_name}`
   const pars = draft.holes.map((h) => h.par).filter((n): n is number => n !== null)
@@ -122,12 +135,24 @@ export async function saveImportedCourse(draft: ImportedCourseDraft): Promise<{ 
     default_tee: draft.tee_name,
     course_par: pars.length === 18 ? pars.reduce((a, b) => a + b, 0) : null,
     total_yardage: yards.length === 18 ? yards.reduce((a, b) => a + b, 0) : null,
-    rating: null,
-    slope: null,
+    rating: draft.rating,
+    slope: draft.slope,
     data_coverage: 'User-imported scorecard',
     source_url: '',
     notes: 'Extracted from a photographed scorecard and confirmed by the user.',
     is_public: false,
+  }
+  const tee: CourseTee = {
+    id: crypto.randomUUID(),
+    course_id: id,
+    course_key: courseKey,
+    tee_name: draft.tee_name,
+    par: course.course_par,
+    total_yardage: course.total_yardage,
+    rating: draft.rating,
+    slope: draft.slope,
+    is_default: true,
+    source_url: '',
   }
   const holes: CourseHole[] = draft.holes.map((hole) => ({
     id: crypto.randomUUID(),
@@ -142,15 +167,17 @@ export async function saveImportedCourse(draft: ImportedCourseDraft): Promise<{ 
   }))
 
   const localCourses = await loadCourses()
+  const localTees = await loadCourseTees()
   const localHoles = await loadCourseHoles()
   await saveCourses([course, ...localCourses.filter((c) => c.course_key !== courseKey)])
+  await saveCourseTees([tee, ...localTees.filter((item) => !(item.course_key === courseKey && item.tee_name === draft.tee_name))])
   await saveCourseHoles([...holes, ...localHoles.filter((h) => h.course_key !== courseKey)])
 
-  if (!isCloudConfigured || !supabase) return { course, holes, sync: 'local-only' }
-  if (!navigator.onLine) return { course, holes, sync: 'offline' }
+  if (!isCloudConfigured || !supabase) return { course, tee, holes, sync: 'local-only' }
+  if (!navigator.onLine) return { course, tee, holes, sync: 'offline' }
   try {
     const userId = await ensureAnonymousSession()
-    if (!userId) return { course, holes, sync: 'local-only' }
+    if (!userId) return { course, tee, holes, sync: 'local-only' }
     const { data: existing } = await supabase
       .from('courses')
       .select('id')
@@ -160,17 +187,21 @@ export async function saveImportedCourse(draft: ImportedCourseDraft): Promise<{ 
     if (existing?.id) {
       course.id = existing.id as string
       holes.forEach((hole) => { hole.course_id = course.id })
+      tee.course_id = course.id
     }
     course.owner_id = userId
+    tee.owner_id = userId
     const { error: courseError } = await supabase.from('courses').upsert(course)
     if (courseError) throw courseError
+    const { error: teeError } = await supabase.from('course_tees').upsert(tee)
+    if (teeError) throw teeError
     await supabase.from('course_holes').delete().eq('course_id', course.id).eq('tee_name', draft.tee_name)
     const cloudHoles = holes.map((hole) => ({ ...hole, owner_id: userId }))
     const { error: holeError } = await supabase.from('course_holes').insert(cloudHoles)
     if (holeError) throw holeError
-    return { course, holes, sync: 'saved' }
+    return { course, tee, holes, sync: 'saved' }
   } catch {
-    return { course, holes, sync: 'error' }
+    return { course, tee, holes, sync: 'error' }
   }
 }
 

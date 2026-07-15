@@ -1,16 +1,6 @@
-RoundWise Golf Performance Tracker v0.4.0
-Validated: 2026-07-15
-
-Commands executed successfully:
-  npm install --no-audit --no-fund --progress=false
-  npm run build
-
-Build result:
-  TypeScript compilation successful
-  Vite production build successful
-  PWA manifest generated
-  Service worker generated
-  RoundWise brand assets included
-  101 modules transformed
-
-No Supabase migration is required for the v0.4 brand, analytics, or round-summary update.
+RoundWise v0.5 tee database update
+Production build: PASS (TypeScript + Vite + PWA generateSW)
+Bundled courses: 74
+Bundled tee records: 67 across 15 verified-scorecard courses
+Bundled hole records: 270
+Course tee foreign-key and uniqueness checks: PASS

@@ -53,7 +53,7 @@ export default function ScorecardView({ round, holes, active, onBack, onHome, on
         <div>
           <p className="eyebrow">{round.status === 'complete' ? 'Round complete' : `${completedHoles}/${holes.length} holes scored`}</p>
           <h1>{round.course_name}</h1>
-          <p className="lead">{round.date} · {round.tee_name}</p>
+          <p className="lead">{round.date} · {round.tee_name}{round.tee_yardage ? ` · ${round.tee_yardage} yd` : ''}{round.course_rating != null && round.course_slope != null ? ` · ${round.course_rating}/${round.course_slope}` : ''}</p>
         </div>
       </header>
 

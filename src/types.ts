@@ -46,6 +46,20 @@ export interface CourseHole {
   source_url?: string
 }
 
+export interface CourseTee {
+  id: string
+  course_id: string
+  owner_id?: string | null
+  course_key: string
+  tee_name: string
+  par: number | null
+  total_yardage: number | null
+  rating: number | null
+  slope: number | null
+  is_default: boolean
+  source_url?: string
+}
+
 export interface MetricConfig {
   courseDetails: boolean
   scoringZone: boolean
@@ -84,6 +98,10 @@ export interface Round {
   course_name: string
   layout: string
   tee_name: string
+  tee_par?: number | null
+  tee_yardage?: number | null
+  course_rating?: number | null
+  course_slope?: number | null
   date: string
   started_at: string
   completed_at?: string | null
@@ -140,6 +158,8 @@ export interface ImportedCourseDraft {
   city: string
   address: string
   tee_name: string
+  rating: number | null
+  slope: number | null
   source_text: string
   holes: Array<{
     hole_number: number

@@ -81,6 +81,8 @@ export function parseScorecardText(text: string): ImportedCourseDraft {
     city: '',
     address: '',
     tee_name: teeName,
+    rating: null,
+    slope: null,
     source_text: text,
     holes: Array.from({ length: 18 }, (_, index) => ({
       hole_number: index + 1,

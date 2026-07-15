@@ -28,6 +28,23 @@ create table if not exists public.courses (
   unique(owner_id, course_key)
 );
 
+create table if not exists public.course_tees (
+  id uuid primary key default gen_random_uuid(),
+  course_id uuid not null references public.courses(id) on delete cascade,
+  owner_id uuid references auth.users(id) on delete cascade,
+  course_key text not null,
+  tee_name text not null,
+  par integer,
+  total_yardage integer,
+  rating numeric,
+  slope integer check (slope between 55 and 155),
+  is_default boolean not null default false,
+  source_url text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(course_id, tee_name)
+);
+
 create table if not exists public.course_holes (
   id uuid primary key default gen_random_uuid(),
   course_id uuid not null references public.courses(id) on delete cascade,
@@ -52,6 +69,10 @@ create table if not exists public.rounds (
   course_name text not null,
   layout text not null default '',
   tee_name text not null default '',
+  tee_par integer,
+  tee_yardage integer,
+  course_rating numeric,
+  course_slope integer,
   date date not null default current_date,
   started_at timestamptz not null,
   completed_at timestamptz,
@@ -114,12 +135,14 @@ create table if not exists public.user_settings (
 );
 
 create trigger courses_updated_at before update on public.courses for each row execute function public.set_updated_at();
+create trigger course_tees_updated_at before update on public.course_tees for each row execute function public.set_updated_at();
 create trigger course_holes_updated_at before update on public.course_holes for each row execute function public.set_updated_at();
 create trigger rounds_updated_at before update on public.rounds for each row execute function public.set_updated_at();
 create trigger hole_results_updated_at before update on public.hole_results for each row execute function public.set_updated_at();
 create trigger user_settings_updated_at before update on public.user_settings for each row execute function public.set_updated_at();
 
 alter table public.courses enable row level security;
+alter table public.course_tees enable row level security;
 alter table public.course_holes enable row level security;
 alter table public.rounds enable row level security;
 alter table public.hole_results enable row level security;
@@ -129,6 +152,15 @@ create policy "Read public or owned courses" on public.courses for select using 
 create policy "Insert owned courses" on public.courses for insert with check (owner_id = auth.uid());
 create policy "Update owned courses" on public.courses for update using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 create policy "Delete owned courses" on public.courses for delete using (owner_id = auth.uid());
+
+create policy "Read public or owned course tees" on public.course_tees for select using (
+  exists (select 1 from public.courses c where c.id = course_id and (c.is_public or c.owner_id = auth.uid()))
+);
+create policy "Insert owned course tees" on public.course_tees for insert with check (
+  owner_id = auth.uid() and exists (select 1 from public.courses c where c.id = course_id and c.owner_id = auth.uid())
+);
+create policy "Update owned course tees" on public.course_tees for update using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+create policy "Delete owned course tees" on public.course_tees for delete using (owner_id = auth.uid());
 
 create policy "Read public or owned course holes" on public.course_holes for select using (
   exists (select 1 from public.courses c where c.id = course_id and (c.is_public or c.owner_id = auth.uid()))

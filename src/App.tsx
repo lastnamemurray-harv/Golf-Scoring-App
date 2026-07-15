@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Course, CourseHole, HoleResult, MetricConfig, Round, Screen, SyncState } from './types'
+import type { Course, CourseHole, CourseTee, HoleResult, MetricConfig, Round, Screen, SyncState } from './types'
 import { DEFAULT_METRICS } from './types'
 import {
   deleteRound as deleteRoundData,
@@ -44,6 +44,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [courses, setCourses] = useState<Course[]>([])
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([])
+  const [courseTees, setCourseTees] = useState<CourseTee[]>([])
   const [rounds, setRounds] = useState<Round[]>([])
   const [settings, setSettings] = useState<MetricConfig>(DEFAULT_METRICS)
   const [activeRound, setActiveRound] = useState<Round | null>(null)
@@ -59,6 +60,7 @@ export default function App() {
     initializeAppData().then(async (data) => {
       setCourses(data.courses)
       setCourseHoles(data.courseHoles)
+      setCourseTees(data.courseTees)
       setRounds(data.rounds)
       setSettings(data.settings)
       setSyncState(data.cloudUserId ? 'saved' : navigator.onLine ? 'local-only' : 'offline')
@@ -199,6 +201,7 @@ export default function App() {
     const result = await saveImportedCourse(draft)
     setCourses((items) => [result.course, ...items.filter((item) => item.course_key !== result.course.course_key)])
     setCourseHoles((items) => [...result.holes, ...items.filter((item) => item.course_key !== result.course.course_key)])
+    setCourseTees((items) => [result.tee, ...items.filter((item) => !(item.course_key === result.tee.course_key && item.tee_name === result.tee.tee_name))])
     return result.sync
   }
 
@@ -238,12 +241,12 @@ export default function App() {
       <section className="card">
         <div className="section-title"><h2>Recent rounds</h2><button className="text-button" onClick={() => setScreen('history')}>View all</button></div>
         {rounds.slice(0, 3).length
-          ? rounds.slice(0, 3).map((round) => <button className="history-row history-button" key={round.id} onClick={() => round.status === 'complete' ? openSavedScorecard(round) : resumeSavedRound(round.id)}><div><strong>{round.course_name}</strong><span>{round.date} · {round.tee_name}</span></div><b>{round.total_score ?? '—'}<small>{formatToPar(round.to_par ?? null)}</small></b></button>)
+          ? rounds.slice(0, 3).map((round) => <button className="history-row history-button" key={round.id} onClick={() => round.status === 'complete' ? openSavedScorecard(round) : resumeSavedRound(round.id)}><div><strong>{round.course_name}</strong><span>{round.date} · {round.tee_name}{round.course_rating != null && round.course_slope != null ? ` · ${round.course_rating}/${round.course_slope}` : ''}</span></div><b>{round.total_score ?? '—'}<small>{formatToPar(round.to_par ?? null)}</small></b></button>)
           : <p className="muted">Your rounds will appear here.</p>}
       </section>
     </main>}
 
-    {screen === 'setup' && <RoundSetup courses={courses} courseHoles={courseHoles} settings={settings} onStart={startRound} onImport={() => setScreen('import')} />}
+    {screen === 'setup' && <RoundSetup courses={courses} courseHoles={courseHoles} courseTees={courseTees} settings={settings} onStart={startRound} onImport={() => setScreen('import')} />}
 
     {screen === 'round' && activeRound && activeHole && <HoleEntry
       round={activeRound}
@@ -278,7 +281,7 @@ export default function App() {
     {screen === 'history' && <main className="page stack">
       <header className="page-brand-header"><BrandMark compact /><div><p className="eyebrow">Round archive</p><h1>History</h1></div></header>
       {rounds.length ? rounds.map((round) => <section className="card round-history" key={round.id}>
-        <div><strong>{round.course_name}</strong><span>{round.date} · {round.tee_name}</span><small>{round.status === 'complete' ? 'Completed' : 'In progress'} · {round.players.length} player{round.players.length === 1 ? '' : 's'}</small></div>
+        <div><strong>{round.course_name}</strong><span>{round.date} · {round.tee_name}{round.course_rating != null && round.course_slope != null ? ` · ${round.course_rating}/${round.course_slope}` : ''}</span><small>{round.status === 'complete' ? 'Completed' : 'In progress'} · {round.players.length} player{round.players.length === 1 ? '' : 's'}</small></div>
         <div className="history-card-actions">
           <div className="round-score"><b>{round.total_score ?? '—'}</b><span>{formatToPar(round.to_par ?? null)}</span></div>
           <button type="button" className="secondary compact-button" onClick={() => openSavedScorecard(round)}>View</button>

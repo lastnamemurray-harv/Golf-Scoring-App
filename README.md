@@ -117,3 +117,7 @@ Version 0.3 adds:
 - Round-specific manual overrides for par, yardage, and hole handicap
 
 Existing Supabase projects must run `supabase/migration_v2_round_features.sql` once before deploying this version.
+
+## v0.5 tee database
+
+RoundWise now stores tee-level par, total yardage, course rating, and slope in a dedicated `course_tees` table. The bundled reference includes multiple tee options for 15 detailed Denver-area courses. Hole-level data remains tee-specific and is only prefilled when verified for that exact tee.

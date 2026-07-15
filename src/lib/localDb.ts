@@ -1,10 +1,11 @@
 import { del, get, set } from 'idb-keyval'
-import type { Course, CourseHole, MetricConfig, Round, HoleResult } from '../types'
+import type { Course, CourseHole, CourseTee, MetricConfig, Round, HoleResult } from '../types'
 import { DEFAULT_METRICS } from '../types'
 
 const KEYS = {
   courses: 'golf:courses',
   courseHoles: 'golf:course-holes',
+  courseTees: 'golf:course-tees',
   settings: 'golf:metric-settings',
   rounds: 'golf:rounds',
   activeRound: 'golf:active-round-id',
@@ -18,6 +19,8 @@ export async function loadCourses(): Promise<Course[]> {
 export async function saveCourses(courses: Course[]): Promise<void> { await set(KEYS.courses, courses) }
 export async function loadCourseHoles(): Promise<CourseHole[]> { return (await get<CourseHole[]>(KEYS.courseHoles)) ?? [] }
 export async function saveCourseHoles(holes: CourseHole[]): Promise<void> { await set(KEYS.courseHoles, holes) }
+export async function loadCourseTees(): Promise<CourseTee[]> { return (await get<CourseTee[]>(KEYS.courseTees)) ?? [] }
+export async function saveCourseTees(tees: CourseTee[]): Promise<void> { await set(KEYS.courseTees, tees) }
 
 export async function loadSettings(): Promise<MetricConfig> {
   return { ...DEFAULT_METRICS, ...((await get<Partial<MetricConfig>>(KEYS.settings)) ?? {}) }
