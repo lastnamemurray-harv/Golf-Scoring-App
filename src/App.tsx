@@ -56,7 +56,7 @@ export default function App() {
   const [scorecardReturn, setScorecardReturn] = useState<'round' | 'history' | 'home' | 'analytics'>('history')
   const [syncState, setSyncState] = useState<SyncState>('local-only')
   const [cloudMessage, setCloudMessage] = useState<string | null>(null)
-  const [celebration, setCelebration] = useState<{ kind: 'birdie' | 'eagle'; id: number } | null>(null)
+  const [celebration, setCelebration] = useState<{ kind: 'birdie' | 'eagle' | 'bogey' | 'double_bogey'; id: number } | null>(null)
 
   useEffect(() => {
     initializeAppData().then(async (data) => {
@@ -92,7 +92,7 @@ export default function App() {
 
   useEffect(() => {
     if (!celebration) return
-    const timer = window.setTimeout(() => setCelebration(null), 1900)
+    const timer = window.setTimeout(() => setCelebration(null), 7200)
     return () => window.clearTimeout(timer)
   }, [celebration])
 
@@ -144,6 +144,8 @@ export default function App() {
       const relative = activeHole.score - activeHole.par
       if (relative <= -2) setCelebration({ kind: 'eagle', id: Date.now() })
       else if (relative === -1) setCelebration({ kind: 'birdie', id: Date.now() })
+      else if (relative >= 2) setCelebration({ kind: 'double_bogey', id: Date.now() })
+      else if (relative === 1) setCelebration({ kind: 'bogey', id: Date.now() })
     }
     void persistRound()
     setHoleIndex((index) => Math.min(holes.length - 1, index + 1))
