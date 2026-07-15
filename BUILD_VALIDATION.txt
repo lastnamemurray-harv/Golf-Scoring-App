@@ -1,22 +1,16 @@
-RoundWise v0.8 build validation
+RoundWise v0.9 build validation
 
-Validated: 2026-07-15
+Command: npm run build
+Result: PASS
 
-Commands:
-  npm install --no-audit --no-fund --progress=false
-  npm run build
+Validated:
+- TypeScript project build
+- Vite production build
+- PWA generateSW output
+- Public npm registry lockfile
 
-Results:
-  TypeScript build: PASS
-  Vite production build: PASS
-  PWA generateSW: PASS
-  Service worker generated: dist/sw.js
+Generated service-worker files:
+- dist/sw.js
+- dist/workbox-9c191d2f.js
 
-Functional updates verified:
-  - Target-zone setting defaults to 100 yards
-  - On-course scoring-zone descriptions use the selected yardage
-  - GIR is calculated as (score - putts) <= (par - 2)
-  - Up-and-down remains automatically calculated
-  - Calculated results appear after Notes in on-course and Details views
-
-Supabase migration required: No
+Note: Vite reports a non-blocking warning that the main JavaScript bundle is larger than 500 kB.

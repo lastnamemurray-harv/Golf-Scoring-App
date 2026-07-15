@@ -86,6 +86,7 @@ export interface MetricConfig {
   courseDetails: boolean
   scoringZone: boolean
   targetZoneYards: number
+  roundFocus: string
   teeClub: boolean
   teeResult: boolean
   gir: boolean
@@ -102,6 +103,7 @@ export const DEFAULT_METRICS: MetricConfig = {
   courseDetails: true,
   scoringZone: true,
   targetZoneYards: 100,
+  roundFocus: 'Avoid blow-up holes',
   teeClub: true,
   teeResult: true,
   gir: true,

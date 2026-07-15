@@ -148,3 +148,11 @@ Existing Supabase projects must run `supabase/migration_v4_player_handicap_tees.
 - Calculated results grouped below Notes in the on-course and Details views
 
 No Supabase migration is required for v0.8.
+
+## v0.9 additions
+
+- Scoring-zone actuals automatically calculate the primary score, with manual override support.
+- Fairway selection and FIR attempts exclude par 3 holes.
+- A configurable default round focus appears as an on-course reminder.
+- Birdie and eagle flyover celebrations appear when advancing to the next hole.
+- Analytics branding and headings use a collision-safe stacked layout.

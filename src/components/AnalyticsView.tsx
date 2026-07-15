@@ -76,9 +76,9 @@ export default function AnalyticsView({ rounds, onOpenRound }: Props) {
   const rangeOptions: Array<5 | 10 | 'all'> = [5, 10, 'all']
 
   return <main className="page stack analytics-page">
-    <header className="analytics-header">
+    <header className="analytics-header analytics-header-stacked">
       <BrandMark compact />
-      <div><p className="eyebrow">Performance dashboard</p><h1>Analytics</h1><p className="lead">See the patterns that are helping—or costing—your score.</p></div>
+      <div className="analytics-heading-copy"><p className="eyebrow">Performance dashboard</p><h1>Analytics</h1><p className="lead">See the patterns that are helping—or costing—your score.</p></div>
     </header>
 
     <div className="range-toggle" role="group" aria-label="Analytics range">

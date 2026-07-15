@@ -34,7 +34,7 @@ export default function RoundSetup({ courses, courseHoles, courseTees, settings,
   const [manualSlope, setManualSlope] = useState('')
   const [handicap, setHandicap] = useState<string>('')
   const [target, setTarget] = useState<string>('')
-  const [focus, setFocus] = useState('Avoid blow-up holes')
+  const [focus, setFocus] = useState(settings.roundFocus || 'Avoid blow-up holes')
   const [players, setPlayers] = useState<Player[]>(DEFAULT_PLAYERS.map((player) => ({ ...player })))
 
   const course = useMemo(() => courses.find((item) => item.course_key === courseKey), [courses, courseKey])
@@ -211,7 +211,7 @@ export default function RoundSetup({ courses, courseHoles, courseTees, settings,
           <button type="button" className="secondary" onClick={addPlayer}>＋ Add another player</button>
         </section>
         <label className="field"><span>Target score</span><input inputMode="numeric" type="number" value={target} onChange={(event) => setTarget(event.target.value)} /></label>
-        <label className="field"><span>Primary focus</span><input value={focus} onChange={(event) => setFocus(event.target.value)} /></label>
+        <label className="field"><span>Round focus</span><input value={focus} maxLength={140} onChange={(event) => setFocus(event.target.value)} /><small>Prefilled from Settings and shown after every hole.</small></label>
         <button className="primary large" type="button" disabled={!course || !teeName} onClick={startRound}>Start round</button>
       </section>
     </main>

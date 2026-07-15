@@ -408,3 +408,46 @@ h1,h2,h3,p { margin:0; } h1,h2,h3,.roundwise-brand strong { font-family:"Montser
   .metric-row.metric-input-only { grid-template-columns:1fr; }
   .calculated-results-grid { grid-template-columns:1fr; }
 }
+
+/* RoundWise v0.9 — auto score, focus reminder, par-3 FIR handling and celebrations */
+.focus-setting-card { border-color:rgba(200,162,74,.38); background:linear-gradient(145deg,#FFFFFF,#FBF7EA); }
+.focus-setting-card .field { margin-top:2px; }
+.focus-reminder { display:flex; flex-direction:column; gap:5px; margin:2px 0 8px; padding:15px 17px; border:1px solid rgba(200,162,74,.48); border-left:5px solid var(--gold); border-radius:17px; background:linear-gradient(145deg,#FFFDF7,#F8F1DC); box-shadow:0 8px 22px rgba(13,30,58,.06); }
+.focus-reminder span { color:var(--fairway); font-size:.68rem; font-weight:900; letter-spacing:.13em; text-transform:uppercase; }
+.focus-reminder strong { color:var(--navy); font-size:1rem; line-height:1.4; }
+.score-entry-card { border-color:rgba(13,30,58,.18); }
+.score-source-chip { align-self:flex-start; padding:6px 10px; border-radius:999px; background:#D9EEE1; color:#276343; font-size:.7rem; font-weight:900; letter-spacing:.05em; text-transform:uppercase; }
+.score-source-chip.overridden { background:#F5E9C9; color:#795E1C; }
+.auto-score-explanation { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border-radius:12px; background:#F3F5F4; color:var(--slate); font-size:.8rem; line-height:1.4; }
+.auto-score-explanation strong { color:var(--navy); }
+.auto-score-explanation .text-button { flex:0 0 auto; }
+.tee-result-cell.disabled,.tee-result-cell:disabled { cursor:not-allowed; opacity:.48; filter:grayscale(.55); transform:none; box-shadow:none; }
+.tee-result-cell.disabled:not(.active),.tee-result-cell:disabled:not(.active) { background:#E7E9E8; color:#7C8580; }
+.analytics-header-stacked { display:flex; flex-direction:column; align-items:flex-start; gap:11px; width:100%; }
+.analytics-header-stacked .roundwise-brand { max-width:100%; }
+.analytics-heading-copy { width:100%; min-width:0; }
+.analytics-heading-copy h1 { margin-top:2px; }
+.analytics-heading-copy .lead { margin-top:7px; max-width:620px; }
+.celebration-flyover { position:fixed; top:31%; left:-190px; z-index:9999; display:flex; align-items:center; gap:10px; pointer-events:none; filter:drop-shadow(0 10px 12px rgba(13,30,58,.22)); animation:roundwise-flyover 1.75s cubic-bezier(.2,.75,.25,1) forwards; }
+.celebration-animal { display:block; font-size:4.4rem; line-height:1; transform:rotate(-7deg); }
+.celebration-label { padding:8px 13px; border:2px solid var(--gold); border-radius:999px; background:rgba(13,30,58,.94); color:white; font-family:"Montserrat",sans-serif; font-size:1.05rem; font-weight:900; letter-spacing:.04em; white-space:nowrap; }
+.celebration-eagle .celebration-animal { font-size:5.2rem; }
+.celebration-eagle .celebration-label { background:rgba(57,94,60,.96); }
+@keyframes roundwise-flyover {
+  0% { left:-190px; transform:translateY(24px) rotate(-4deg) scale(.82); opacity:0; }
+  12% { opacity:1; }
+  52% { transform:translateY(-18px) rotate(2deg) scale(1); }
+  88% { opacity:1; }
+  100% { left:calc(100vw + 30px); transform:translateY(8px) rotate(5deg) scale(.9); opacity:0; }
+}
+@media (max-width:520px) {
+  .auto-score-explanation { align-items:flex-start; flex-direction:column; }
+  .celebration-flyover { top:28%; }
+  .celebration-animal { font-size:3.8rem; }
+  .celebration-eagle .celebration-animal { font-size:4.5rem; }
+  .celebration-label { font-size:.9rem; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .celebration-flyover { left:50%; transform:translateX(-50%); animation:roundwise-celebration-fade 1.5s ease forwards; }
+  @keyframes roundwise-celebration-fade { 0%{opacity:0} 20%,75%{opacity:1} 100%{opacity:0} }
+}

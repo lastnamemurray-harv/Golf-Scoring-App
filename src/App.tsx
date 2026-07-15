@@ -18,6 +18,7 @@ import AnalyticsView from './components/AnalyticsView'
 import Settings from './components/Settings'
 import SyncBadge from './components/SyncBadge'
 import BrandMark from './components/BrandMark'
+import CelebrationFlyover from './components/CelebrationFlyover'
 import { formatToPar } from './lib/analytics'
 
 function calculateRound(round: Round, holes: HoleResult[]): Round {
@@ -55,6 +56,7 @@ export default function App() {
   const [scorecardReturn, setScorecardReturn] = useState<'round' | 'history' | 'home' | 'analytics'>('history')
   const [syncState, setSyncState] = useState<SyncState>('local-only')
   const [cloudMessage, setCloudMessage] = useState<string | null>(null)
+  const [celebration, setCelebration] = useState<{ kind: 'birdie' | 'eagle'; id: number } | null>(null)
 
   useEffect(() => {
     initializeAppData().then(async (data) => {
@@ -86,6 +88,13 @@ export default function App() {
       window.removeEventListener('offline', offline)
     }
   }, [])
+
+
+  useEffect(() => {
+    if (!celebration) return
+    const timer = window.setTimeout(() => setCelebration(null), 1900)
+    return () => window.clearTimeout(timer)
+  }, [celebration])
 
   const activeHole = holes[holeIndex]
   const completedCount = useMemo(() => holes.filter((hole) => hole.score != null).length, [holes])
@@ -127,6 +136,18 @@ export default function App() {
     const next = holes.map((hole) => hole.id === updated.id ? updated : hole)
     setHoles(next)
     void persistRound(activeRound, next)
+  }
+
+
+  function advanceHole() {
+    if (activeHole?.score != null && activeHole.par != null) {
+      const relative = activeHole.score - activeHole.par
+      if (relative <= -2) setCelebration({ kind: 'eagle', id: Date.now() })
+      else if (relative === -1) setCelebration({ kind: 'birdie', id: Date.now() })
+    }
+    void persistRound()
+    setHoleIndex((index) => Math.min(holes.length - 1, index + 1))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   async function finishRound() {
@@ -264,7 +285,7 @@ export default function App() {
       onHome={() => { void persistRound(); setScreen('home') }}
       onScorecard={() => { void persistRound(); openActiveScorecard('round') }}
       onPrevious={() => { void persistRound(); setHoleIndex((index) => Math.max(0, index - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-      onNext={() => { void persistRound(); setHoleIndex((index) => Math.min(holes.length - 1, index + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+      onNext={advanceHole}
       onFinish={finishRound}
     />}
 
@@ -303,5 +324,6 @@ export default function App() {
       <button className={screen === 'history' ? 'active' : ''} onClick={() => setScreen('history')}><span>▤</span>History</button>
       <button className={screen === 'settings' ? 'active' : ''} onClick={() => setScreen('settings')}><span>⚙</span>Settings</button>
     </nav>}
+    {celebration && <CelebrationFlyover kind={celebration.kind} animationKey={celebration.id} />}
   </div>
 }

@@ -1,5 +1,6 @@
 interface Props {
   value: string
+  par?: number | null
   onChange: (value: string) => void
 }
 
@@ -18,21 +19,27 @@ const OPTIONS = [
   { value: 'Penalty', label: 'Penalty', icon: '+1', tone: 'hazard' },
 ] as const
 
-export default function TeeResultGrid({ value, onChange }: Props) {
+export default function TeeResultGrid({ value, par, onChange }: Props) {
+  const parThree = par === 3
   return <fieldset className="tee-result-field">
     <legend>Tee result</legend>
-    <p className="muted compact">Tap the area where the tee shot finished.</p>
+    <p className="muted compact">Tap the area where the tee shot finished.{parThree ? ' Fairway is not used on par 3s.' : ''}</p>
     <div className="tee-result-grid" role="group" aria-label="Tee-shot result location">
-      {OPTIONS.map((option) => <button
-        type="button"
-        key={option.value}
-        className={`tee-result-cell tee-result-${option.tone} ${value === option.value ? 'active' : ''}`}
-        aria-pressed={value === option.value}
-        onClick={() => onChange(value === option.value ? '' : option.value)}
-      >
-        <span aria-hidden="true">{option.icon}</span>
-        <strong>{option.label}</strong>
-      </button>)}
+      {OPTIONS.map((option) => {
+        const disabled = parThree && option.value === 'FIR'
+        return <button
+          type="button"
+          key={option.value}
+          className={`tee-result-cell tee-result-${option.tone} ${value === option.value ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
+          aria-pressed={value === option.value}
+          aria-disabled={disabled}
+          disabled={disabled}
+          onClick={() => onChange(value === option.value ? '' : option.value)}
+        >
+          <span aria-hidden="true">{option.icon}</span>
+          <strong>{disabled ? 'Par 3' : option.label}</strong>
+        </button>
+      })}
     </div>
     <div className="tee-result-grid-actions">
       <button type="button" className={value === 'N/A' ? 'active' : ''} onClick={() => onChange(value === 'N/A' ? '' : 'N/A')}>N/A</button>

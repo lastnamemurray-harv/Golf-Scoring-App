@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { HoleResult, MetricConfig, Round, SyncState } from '../types'
 import NumberField from './NumberField'
 import Segmented from './Segmented'
@@ -50,6 +50,9 @@ export default function HoleEntry({
     ? null
     : Number(hole.entering_zone_actual <= hole.entering_zone_target)
   const downPoint = hole.down_zone_actual == null ? null : Number(hole.down_zone_actual <= 3)
+  const autoZoneScore = settings.scoringZone && hole.entering_zone_actual != null && hole.down_zone_actual != null
+    ? hole.entering_zone_actual + hole.down_zone_actual
+    : null
   const calculatedGir = calculateGir(hole.score, hole.putts, hole.par)
   const calculatedUpDown = calculateUpDown(hole.chips_pitches, hole.putts)
   const methodValues = [hole.plan, hole.routine, hole.commit, hole.smart_decision, hole.reset]
@@ -59,32 +62,53 @@ export default function HoleEntry({
   const zonePoints = [enteringPoint, downPoint].filter((value) => value != null).reduce<number>((sum, value) => sum + Number(value), 0)
   const guests = round.players.filter((player) => !player.is_primary)
   const [editingHoleInfo, setEditingHoleInfo] = useState(false)
+  const [scoreOverride, setScoreOverride] = useState(false)
   const targetZoneYards = settings.targetZoneYards || 100
 
-  const update = (patch: Partial<HoleResult>) => {
+  useEffect(() => {
+    setScoreOverride(Boolean(settings.scoringZone && autoZoneScore != null && hole.score != null && hole.score !== autoZoneScore))
+  }, [hole.id])
+
+  const update = (rawPatch: Partial<HoleResult>) => {
+    const patch = { ...rawPatch }
+    const nextEntering = patch.entering_zone_actual !== undefined ? patch.entering_zone_actual : hole.entering_zone_actual
+    const nextDown = patch.down_zone_actual !== undefined ? patch.down_zone_actual : hole.down_zone_actual
+    const nextPar = patch.par !== undefined ? patch.par : hole.par
+
+    if (settings.scoringZone && !scoreOverride && (patch.entering_zone_actual !== undefined || patch.down_zone_actual !== undefined)) {
+      patch.score = nextEntering != null && nextDown != null ? nextEntering + nextDown : null
+    }
+    if (nextPar === 3 && (patch.tee_result !== undefined ? patch.tee_result : hole.tee_result) === 'FIR') {
+      patch.tee_result = ''
+    }
+
     const nextChips = patch.chips_pitches !== undefined ? patch.chips_pitches : hole.chips_pitches
     const nextPutts = patch.putts !== undefined ? patch.putts : hole.putts
     const nextScore = patch.score !== undefined ? patch.score : hole.score
-    const nextPar = patch.par !== undefined ? patch.par : hole.par
+    const enteringTarget = nextPar != null ? nextPar - 2 : null
     const recalculateUpDown = patch.chips_pitches !== undefined || patch.putts !== undefined
     const recalculateGir = patch.score !== undefined || patch.putts !== undefined || patch.par !== undefined
 
     onChange({
       ...hole,
       ...patch,
-      entering_zone_target: patch.par !== undefined && patch.par != null ? patch.par - 2 : hole.entering_zone_target,
-      entering_zone_point: patch.entering_zone_actual !== undefined || patch.par !== undefined
-        ? ((patch.entering_zone_actual ?? hole.entering_zone_actual) == null || (patch.par ?? hole.par) == null
-          ? null
-          : Number((patch.entering_zone_actual ?? hole.entering_zone_actual)! <= (patch.par ?? hole.par)! - 2))
-        : enteringPoint,
-      down_zone_point: patch.down_zone_actual !== undefined
-        ? (patch.down_zone_actual == null ? null : Number(patch.down_zone_actual <= 3))
-        : downPoint,
+      entering_zone_target: enteringTarget,
+      entering_zone_point: nextEntering == null || enteringTarget == null ? null : Number(nextEntering <= enteringTarget),
+      down_zone_point: nextDown == null ? null : Number(nextDown <= 3),
       gir: recalculateGir ? calculateGir(nextScore, nextPutts, nextPar) : hole.gir,
       up_down: recalculateUpDown ? calculateUpDown(nextChips, nextPutts) : hole.up_down,
       updated_at: new Date().toISOString(),
     })
+  }
+
+  const updatePrimaryScore = (score: number | null) => {
+    setScoreOverride(!(autoZoneScore != null && score === autoZoneScore))
+    update({ score })
+  }
+
+  const restoreAutoScore = () => {
+    setScoreOverride(false)
+    update({ score: autoZoneScore })
   }
 
   const updateGuestScore = (playerId: string, value: number | null) => update({
@@ -129,9 +153,30 @@ export default function HoleEntry({
           <button type="button" className="secondary" onClick={() => setEditingHoleInfo(false)}>Done</button>
         </section>}
 
-        <section className="card stack">
-          <h2>Your score</h2>
-          <NumberField label="Strokes" value={hole.score} min={1} max={15} onChange={(score) => update({ score })} />
+        {settings.scoringZone && <section className="card stack">
+          <div className="section-title"><h2>Scoring zone</h2><span className="points">{zonePoints}/2 pts</span></div>
+          <div className="metric-row metric-input-only">
+            <div><span>Entering target</span><strong>{hole.entering_zone_target ?? '—'}</strong><small>Strokes to get within {targetZoneYards} yards of green.</small></div>
+            <NumberField label="Actual strokes" value={hole.entering_zone_actual} min={1} max={12} onChange={(value) => update({ entering_zone_actual: value })} />
+          </div>
+          <div className="metric-row metric-input-only">
+            <div><span>Down target</span><strong>3</strong><small>Strokes inside {targetZoneYards} yards of green.</small></div>
+            <NumberField label="Actual strokes" value={hole.down_zone_actual} min={1} max={10} onChange={(value) => update({ down_zone_actual: value })} />
+          </div>
+        </section>}
+
+        <section className="card stack score-entry-card">
+          <div className="section-title">
+            <div><h2>Your score</h2>{settings.scoringZone && <p className="muted compact">Automatically calculated from entering plus down strokes. You can override it.</p>}</div>
+            {settings.scoringZone && autoZoneScore != null && <span className={`score-source-chip ${scoreOverride ? 'overridden' : ''}`}>{scoreOverride ? 'Manual' : 'Auto'}</span>}
+          </div>
+          <NumberField label="Your score strokes" value={hole.score} min={1} max={20} onChange={updatePrimaryScore} />
+          {settings.scoringZone && <div className="auto-score-explanation">
+            {autoZoneScore == null
+              ? <span>Enter both scoring-zone actuals to calculate your score.</span>
+              : <span>{hole.entering_zone_actual} entering + {hole.down_zone_actual} down = <strong>{autoZoneScore} strokes</strong></span>}
+            {scoreOverride && autoZoneScore != null && <button type="button" className="text-button" onClick={restoreAutoScore}>Use calculated score</button>}
+          </div>}
         </section>
 
         {guests.length > 0 && <section className="card stack">
@@ -151,19 +196,7 @@ export default function HoleEntry({
         {(settings.teeClub || settings.teeResult) && <section className="card stack">
           <h2>Off the tee</h2>
           {settings.teeClub && <label className="field"><span>Club used</span><select value={hole.club_used_off_tee} onChange={(event) => update({ club_used_off_tee: event.target.value })}><option value="">Select club</option>{CLUBS.map((club) => <option key={club}>{club}</option>)}</select></label>}
-          {settings.teeResult && <TeeResultGrid value={hole.tee_result} onChange={(value) => update({ tee_result: value })} />}
-        </section>}
-
-        {settings.scoringZone && <section className="card stack">
-          <div className="section-title"><h2>Scoring zone</h2><span className="points">{zonePoints}/2 pts</span></div>
-          <div className="metric-row metric-input-only">
-            <div><span>Entering target</span><strong>{hole.entering_zone_target ?? '—'}</strong><small>Strokes to get within {targetZoneYards} yards of green.</small></div>
-            <NumberField label="Actual stroke" value={hole.entering_zone_actual} min={1} max={12} onChange={(value) => update({ entering_zone_actual: value })} />
-          </div>
-          <div className="metric-row metric-input-only">
-            <div><span>Down target</span><strong>3</strong><small>Strokes inside {targetZoneYards} yards of green.</small></div>
-            <NumberField label="Actual strokes" value={hole.down_zone_actual} min={1} max={10} onChange={(value) => update({ down_zone_actual: value })} />
-          </div>
+          {settings.teeResult && <TeeResultGrid par={hole.par} value={hole.tee_result} onChange={(value) => update({ tee_result: value })} />}
         </section>}
 
         {settings.shortGame && <section className="card stack">
@@ -198,6 +231,11 @@ export default function HoleEntry({
             {settings.shortGame && <div className={`auto-result ${resultClass(calculatedUpDown)}`}><span>Up and down</span><strong>{calculatedUpDown || 'Pending'}</strong><small>{hole.chips_pitches === 0 ? 'No short-game attempt' : hole.putts == null ? 'Enter putts to calculate' : 'Calculated from chips/pitches and putts'}</small></div>}
           </div>
         </section>}
+
+        {round.primary_focus?.trim() && <aside className="focus-reminder" aria-label="Round focus reminder">
+          <span>Round focus</span>
+          <strong>{round.primary_focus}</strong>
+        </aside>}
       </div>
 
       <div className="round-actions">

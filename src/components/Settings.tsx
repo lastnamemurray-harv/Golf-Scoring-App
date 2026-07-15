@@ -2,7 +2,7 @@ import type { MetricConfig, SyncState } from '../types'
 import { DEFAULT_METRICS } from '../types'
 import SyncBadge from './SyncBadge'
 
-type ToggleMetricKey = Exclude<keyof MetricConfig, 'targetZoneYards'>
+type ToggleMetricKey = Exclude<keyof MetricConfig, 'targetZoneYards' | 'roundFocus'>
 
 const ITEMS: Array<{ key: ToggleMetricKey; title: string; description: string }> = [
   { key: 'courseDetails', title: 'Yardage and hole handicap', description: 'Show course reference information at the top of each hole.' },
@@ -41,6 +41,23 @@ export default function Settings({ settings, sync, onChange, onSave }: Props) {
       <SyncBadge state={sync} />
     </header>
     <p className="lead">Score and par remain available. Everything else can be hidden from the on-course screen.</p>
+
+    <section className="card stack focus-setting-card">
+      <div>
+        <p className="eyebrow">On-course reminder</p>
+        <h2>Default round focus</h2>
+        <p className="muted compact">This is prefilled when you start a round and appears at the bottom of every hole.</p>
+      </div>
+      <label className="field">
+        <span>Focus</span>
+        <input
+          value={settings.roundFocus}
+          maxLength={140}
+          placeholder="Example: Pick conservative targets after a miss"
+          onChange={(event) => onChange({ ...settings, roundFocus: event.target.value })}
+        />
+      </label>
+    </section>
 
     <section className="card stack target-zone-setting">
       <div>
