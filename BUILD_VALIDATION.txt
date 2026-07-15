@@ -1,21 +1,16 @@
-Golf Method Scorecard PWA v0.3.0
-Validation date: 2026-07-15
+RoundWise Golf Performance Tracker v0.4.0
+Validated: 2026-07-15
 
-Build command: npm run build
-Result: SUCCESS
+Commands executed successfully:
+  npm install --no-audit --no-fund --progress=false
+  npm run build
 
-Validated features in source:
-- Course-specific tee selector with manual/custom tee option
-- Score-only playing partners
-- Home and live scorecard navigation during an active round
-- Simplified group scorecard with strokes and score versus par
-- Detailed scorecard limited to activated metrics
-- Delete in-progress rounds and completed history rounds
-- Manual per-round overrides for par, yardage, and hole handicap
-- Existing metric settings, offline persistence, Supabase sync, PWA and scorecard OCR import
+Build result:
+  TypeScript compilation successful
+  Vite production build successful
+  PWA manifest generated
+  Service worker generated
+  RoundWise brand assets included
+  101 modules transformed
 
-Deployment configuration:
-- Node 22.16.0 via .nvmrc
-- Public npm registry via .npmrc and package-lock.json
-- Cloudflare static assets via wrangler.jsonc
-- No public/_redirects file
+No Supabase migration is required for the v0.4 brand, analytics, or round-summary update.

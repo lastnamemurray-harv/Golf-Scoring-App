@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { HoleResult, Player, Round } from '../types'
+import { analyzeRound, formatPercent, formatToPar } from '../lib/analytics'
+import BrandMark from './BrandMark'
 
 interface Props {
   round: Round
@@ -9,23 +11,27 @@ interface Props {
   onHome: () => void
   onSelectHole?: (index: number) => void
   onDelete: () => void
+  onAnalytics?: () => void
 }
 
 function relativeLabel(score: number | null, par: number | null): string {
   if (score == null || par == null) return '—'
-  const value = score - par
-  if (value === 0) return 'E'
-  return value > 0 ? `+${value}` : String(value)
+  return formatToPar(score - par)
 }
 
 function playerScore(hole: HoleResult, player: Player): number | null {
   return player.is_primary ? hole.score : hole.player_scores?.[player.id] ?? null
 }
 
-export default function ScorecardView({ round, holes, active, onBack, onHome, onSelectHole, onDelete }: Props) {
-  const [view, setView] = useState<'simple' | 'detailed'>('simple')
+function SummaryStat({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return <article className="summary-stat"><span>{label}</span><strong>{value}</strong><small>{detail}</small></article>
+}
+
+export default function ScorecardView({ round, holes, active, onBack, onHome, onSelectHole, onDelete, onAnalytics }: Props) {
+  const [view, setView] = useState<'summary' | 'simple' | 'detailed'>(round.status === 'complete' ? 'summary' : 'simple')
   const settings = round.tracking_config
   const players = round.players
+  const analysis = useMemo(() => analyzeRound(round, holes), [round, holes])
 
   const totals = useMemo(() => players.map((player) => {
     const completed = holes.filter((hole) => playerScore(hole, player) != null && hole.par != null)
@@ -42,16 +48,62 @@ export default function ScorecardView({ round, holes, active, onBack, onHome, on
         <button type="button" className="secondary compact-button" onClick={onBack}>{active ? '← Back to hole' : '← Back'}</button>
         <button type="button" className="secondary compact-button" onClick={onHome}>⌂ Home</button>
       </div>
-      <header>
-        <p className="eyebrow">{round.status === 'complete' ? 'Completed round' : `${completedHoles}/${holes.length} holes scored`}</p>
-        <h1>{round.course_name}</h1>
-        <p className="lead">{round.date} · {round.tee_name}</p>
+      <header className="scorecard-header">
+        <BrandMark compact />
+        <div>
+          <p className="eyebrow">{round.status === 'complete' ? 'Round complete' : `${completedHoles}/${holes.length} holes scored`}</p>
+          <h1>{round.course_name}</h1>
+          <p className="lead">{round.date} · {round.tee_name}</p>
+        </div>
       </header>
 
-      <div className="view-toggle" role="group" aria-label="Scorecard view">
-        <button type="button" className={view === 'simple' ? 'active' : ''} onClick={() => setView('simple')}>Simplified</button>
-        <button type="button" className={view === 'detailed' ? 'active' : ''} onClick={() => setView('detailed')}>Detailed</button>
+      <div className="view-toggle three-view-toggle" role="group" aria-label="Scorecard view">
+        <button type="button" className={view === 'summary' ? 'active' : ''} onClick={() => setView('summary')}>Summary</button>
+        <button type="button" className={view === 'simple' ? 'active' : ''} onClick={() => setView('simple')}>Scores</button>
+        <button type="button" className={view === 'detailed' ? 'active' : ''} onClick={() => setView('detailed')}>Details</button>
       </div>
+
+      {view === 'summary' && <section className="round-summary stack">
+        <article className="round-score-hero">
+          <div><p className="eyebrow">Round score</p><strong>{analysis.totalScore ?? '—'}</strong><span>{formatToPar(analysis.toPar)}</span></div>
+          <div className="round-score-meta"><span>{analysis.completedHoles} holes</span><span>Par {analysis.totalPar ?? '—'}</span><span>{round.players.length} player{round.players.length === 1 ? '' : 's'}</span></div>
+        </article>
+
+        <section className="summary-stat-grid">
+          <SummaryStat label="Fairways" value={formatPercent(analysis.fairways.rate)} detail={`${analysis.fairways.made}/${analysis.fairways.attempts} tracked`} />
+          <SummaryStat label="GIR" value={formatPercent(analysis.gir.rate)} detail={`${analysis.gir.made}/${analysis.gir.attempts}`} />
+          <SummaryStat label="Putts" value={analysis.totalPutts ? String(analysis.totalPutts) : '—'} detail={analysis.averagePutts == null ? 'No data' : `${analysis.averagePutts.toFixed(2)} per hole`} />
+          <SummaryStat label="Scoring zone" value={formatPercent(analysis.scoringZone.rate)} detail={`${analysis.scoringZone.made}/${analysis.scoringZone.attempts} points`} />
+          <SummaryStat label="Method" value={formatPercent(analysis.method.rate)} detail="Process score" />
+          <SummaryStat label="Damage events" value={String(analysis.damageEvents)} detail={`${analysis.penalties} penalties · ${analysis.threePutts} three-putts`} />
+        </section>
+
+        <section className="card score-distribution-strip">
+          <div><span>Birdie+</span><strong>{analysis.birdiesOrBetter}</strong></div>
+          <div><span>Par</span><strong>{analysis.pars}</strong></div>
+          <div><span>Bogey</span><strong>{analysis.bogeys}</strong></div>
+          <div><span>Double</span><strong>{analysis.doubles}</strong></div>
+          <div><span>Triple+</span><strong>{analysis.triplesPlus}</strong></div>
+        </section>
+
+        <section className="insight-pair round-insights">
+          <article className="insight-card good"><span className="insight-icon">✓</span><div><p className="eyebrow">What went well</p>{analysis.strengths.length ? analysis.strengths.map((insight) => <div className="insight-list-item" key={insight.title}><h3>{insight.title}</h3><p>{insight.detail}</p></div>) : <p>Complete more tracked metrics to identify strengths.</p>}</div></article>
+          <article className="insight-card warning"><span className="insight-icon">!</span><div><p className="eyebrow">What cost strokes</p>{analysis.opportunities.length ? analysis.opportunities.map((insight) => <div className="insight-list-item" key={insight.title}><h3>{insight.title}</h3><p>{insight.detail}</p></div>) : <p>No major scoring leaks were identified in the tracked data.</p>}</div></article>
+        </section>
+
+        <section className="card next-focus-card">
+          <p className="eyebrow">Next-round priority</p>
+          <h2>{analysis.nextFocus.title}</h2>
+          <p>{analysis.nextFocus.detail}</p>
+        </section>
+
+        {(analysis.bestHole || analysis.worstHole) && <section className="highlight-holes">
+          {analysis.bestHole && <article className="card"><p className="eyebrow">Best hole</p><h2>Hole {analysis.bestHole.hole_number}</h2><strong>{analysis.bestHole.score} on par {analysis.bestHole.par}</strong><span>{relativeLabel(analysis.bestHole.score, analysis.bestHole.par)}</span></article>}
+          {analysis.worstHole && <article className="card"><p className="eyebrow">Costliest hole</p><h2>Hole {analysis.worstHole.hole_number}</h2><strong>{analysis.worstHole.score} on par {analysis.worstHole.par}</strong><span>{relativeLabel(analysis.worstHole.score, analysis.worstHole.par)}</span></article>}
+        </section>}
+
+        {onAnalytics && round.status === 'complete' && <button type="button" className="secondary large" onClick={onAnalytics}>View performance analytics →</button>}
+      </section>}
 
       {view === 'simple' && <section className="card scorecard-table-card">
         <div className="scorecard-scroll">
@@ -67,7 +119,7 @@ export default function ScorecardView({ round, holes, active, onBack, onHome, on
                 })}
               </tr>)}
             </tbody>
-            <tfoot><tr><th>Total</th><td>{holes.reduce((sum, hole) => sum + Number(hole.par ?? 0), 0) || '—'}</td>{totals.map(({ player, score, toPar }) => <td key={player.id}><strong>{score ?? '—'}</strong><small>{toPar == null ? '—' : toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}</small></td>)}</tr></tfoot>
+            <tfoot><tr><th>Total</th><td>{holes.reduce((sum, hole) => sum + Number(hole.par ?? 0), 0) || '—'}</td>{totals.map(({ player, score, toPar }) => <td key={player.id}><strong>{score ?? '—'}</strong><small>{formatToPar(toPar)}</small></td>)}</tr></tfoot>
           </table>
         </div>
         {onSelectHole && <p className="muted compact table-hint">Tap a hole row to return to that hole.</p>}

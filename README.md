@@ -1,4 +1,8 @@
-# Golf Method Scorecard PWA
+# RoundWise Golf Performance Tracker
+
+## RoundWise v0.4
+
+The app now includes the RoundWise brand identity, branded PWA icons, a mobile analytics dashboard, score-to-par trends, round summaries, and automated strengths/opportunities after each round.
 
 A mobile-first golf scorecard that works as an installable Progressive Web App on Cloudflare Pages.
 

@@ -7,20 +7,20 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/golf-192.png', 'icons/golf-512.png'],
+      includeAssets: ['icons/roundwise-192.png', 'icons/roundwise-512.png', 'brand/roundwise-mark.png'],
       manifest: {
-        name: 'Golf Method Scorecard',
-        short_name: 'Golf Scorecard',
-        description: 'Mobile golf scorecard with method scoring, scoring-zone metrics, offline saving and course import.',
-        theme_color: '#173f33',
-        background_color: '#f4f7f5',
+        name: 'RoundWise Golf Performance Tracker',
+        short_name: 'RoundWise',
+        description: 'RoundWise mobile golf scorecard, performance analytics, scoring-zone tracking and round insights.',
+        theme_color: '#0D1E3A',
+        background_color: '#F7F6F2',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
         icons: [
-          { src: '/icons/golf-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/golf-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/icons/golf-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: '/icons/roundwise-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/roundwise-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icons/roundwise-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {

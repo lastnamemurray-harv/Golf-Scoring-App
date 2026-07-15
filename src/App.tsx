@@ -14,8 +14,11 @@ import RoundSetup from './components/RoundSetup'
 import HoleEntry from './components/HoleEntry'
 import ScorecardImport from './components/ScorecardImport'
 import ScorecardView from './components/ScorecardView'
+import AnalyticsView from './components/AnalyticsView'
 import Settings from './components/Settings'
 import SyncBadge from './components/SyncBadge'
+import BrandMark from './components/BrandMark'
+import { formatToPar } from './lib/analytics'
 
 function calculateRound(round: Round, holes: HoleResult[]): Round {
   const scored = holes.filter((hole) => hole.score != null)
@@ -48,7 +51,7 @@ export default function App() {
   const [holeIndex, setHoleIndex] = useState(0)
   const [scorecardRound, setScorecardRound] = useState<Round | null>(null)
   const [scorecardHoles, setScorecardHoles] = useState<HoleResult[]>([])
-  const [scorecardReturn, setScorecardReturn] = useState<'round' | 'history' | 'home'>('history')
+  const [scorecardReturn, setScorecardReturn] = useState<'round' | 'history' | 'home' | 'analytics'>('history')
   const [syncState, setSyncState] = useState<SyncState>('local-only')
   const [cloudMessage, setCloudMessage] = useState<string | null>(null)
 
@@ -84,6 +87,11 @@ export default function App() {
 
   const activeHole = holes[holeIndex]
   const completedCount = useMemo(() => holes.filter((hole) => hole.score != null).length, [holes])
+  const completedRounds = useMemo(() => rounds.filter((round) => round.status === 'complete'), [rounds])
+  const bestRound = useMemo(() => {
+    const scored = completedRounds.filter((round) => round.total_score != null)
+    return scored.length ? [...scored].sort((a, b) => Number(a.total_score) - Number(b.total_score))[0] : null
+  }, [completedRounds])
 
   async function refreshRounds() {
     setRounds(await listRounds())
@@ -120,9 +128,12 @@ export default function App() {
     const completed = calculateRound({ ...activeRound, status: 'complete', completed_at: new Date().toISOString() }, holes)
     setSyncState('saving')
     setSyncState(await saveRoundAndHoles(completed, holes))
+    setScorecardRound(completed)
+    setScorecardHoles(holes)
+    setScorecardReturn('history')
     setActiveRound(null)
     setHoles([])
-    setScreen('history')
+    setScreen('scorecard')
     await refreshRounds()
   }
 
@@ -152,11 +163,11 @@ export default function App() {
     setScreen('scorecard')
   }
 
-  async function openSavedScorecard(round: Round) {
+  async function openSavedScorecard(round: Round, returnTo: 'history' | 'analytics' = 'history') {
     const bundle = await loadRoundBundle(round.id)
     setScorecardRound(bundle.round ?? round)
     setScorecardHoles(bundle.holes)
-    setScorecardReturn('history')
+    setScorecardReturn(returnTo)
     setScreen('scorecard')
   }
 
@@ -167,7 +178,7 @@ export default function App() {
   async function removeRound(round: Round) {
     const descriptor = round.status === 'complete' ? 'saved round' : 'partially completed round'
     if (!window.confirm(`Delete this ${descriptor} at ${round.course_name}? This cannot be undone.`)) return
-    const returnScreen: Screen = screen === 'history' || (screen === 'scorecard' && scorecardReturn === 'history') ? 'history' : 'home'
+    const returnScreen: Screen = screen === 'history' || (screen === 'scorecard' && scorecardReturn === 'history') ? 'history' : screen === 'analytics' || scorecardReturn === 'analytics' ? 'analytics' : 'home'
     setSyncState('saving')
     const state = await deleteRoundData(round.id)
     setSyncState(state)
@@ -196,11 +207,16 @@ export default function App() {
     setSyncState(await saveMetricSettings(settings))
   }
 
-  if (loading) return <main className="loading-screen"><div className="golf-ball">⛳</div><h1>Loading scorecard…</h1></main>
+  if (loading) return <main className="loading-screen"><img src="/brand/roundwise-mark.png" alt="" /><h1>ROUNDWISE</h1><p>Preparing your scorecard…</p></main>
 
   return <div className="app-shell">
     {screen === 'home' && <main className="page stack home-page">
-      <header className="brand"><div><p className="eyebrow">Golf Method</p><h1>Play the next shot well.</h1></div><SyncBadge state={syncState} /></header>
+      <header className="brand home-brand"><BrandMark /><SyncBadge state={syncState} /></header>
+      <section className="home-hero">
+        <p className="eyebrow">Track smart. Play better. Score lower.</p>
+        <h1>Turn every round into a plan for improvement.</h1>
+        <p>Scorekeeping, detailed performance tracking, and focused insights in one mobile-first app.</p>
+      </section>
       {cloudMessage && <div className="notice warning"><strong>Cloud sync is not active</strong><span>{cloudMessage} The app will continue saving on this phone.</span></div>}
       {activeRound && <section className="card resume-card">
         <div><p className="eyebrow">Round in progress</p><h2>{activeRound.course_name}</h2><p>{completedCount}/{holes.length || 18} holes scored · {activeRound.tee_name}</p></div>
@@ -212,12 +228,17 @@ export default function App() {
       </section>}
       <section className="home-actions">
         <button className="home-action primary" onClick={() => setScreen('setup')}><span>＋</span><strong>Start a round</strong><small>Select a course, tee and players.</small></button>
-        <button className="home-action" onClick={() => setScreen('import')}><span>📷</span><strong>Import scorecard</strong><small>Extract course and hole information from a photo.</small></button>
+        <button className="home-action" onClick={() => setScreen('analytics')}><span>⌁</span><strong>View analytics</strong><small>See trends, strengths and scoring opportunities.</small></button>
+        <button className="home-action" onClick={() => setScreen('import')}><span>▣</span><strong>Import scorecard</strong><small>Extract course and hole information from a photo.</small></button>
       </section>
+      {completedRounds.length > 0 && <section className="home-performance-grid">
+        <article className="performance-chip"><span>Rounds</span><strong>{completedRounds.length}</strong><small>Completed</small></article>
+        <article className="performance-chip gold"><span>Best score</span><strong>{bestRound?.total_score ?? '—'}</strong><small>{formatToPar(bestRound?.to_par ?? null)}</small></article>
+      </section>}
       <section className="card">
         <div className="section-title"><h2>Recent rounds</h2><button className="text-button" onClick={() => setScreen('history')}>View all</button></div>
         {rounds.slice(0, 3).length
-          ? rounds.slice(0, 3).map((round) => <div className="history-row" key={round.id}><div><strong>{round.course_name}</strong><span>{round.date} · {round.tee_name}</span></div><b>{round.total_score ?? '—'}</b></div>)
+          ? rounds.slice(0, 3).map((round) => <button className="history-row history-button" key={round.id} onClick={() => round.status === 'complete' ? openSavedScorecard(round) : resumeSavedRound(round.id)}><div><strong>{round.course_name}</strong><span>{round.date} · {round.tee_name}</span></div><b>{round.total_score ?? '—'}<small>{formatToPar(round.to_par ?? null)}</small></b></button>)
           : <p className="muted">Your rounds will appear here.</p>}
       </section>
     </main>}
@@ -247,17 +268,19 @@ export default function App() {
       onHome={() => setScreen('home')}
       onSelectHole={activeRound?.id === scorecardRound.id ? (index) => { setHoleIndex(index); setScreen('round'); window.scrollTo({ top: 0 }) } : undefined}
       onDelete={() => removeRound(scorecardRound)}
+      onAnalytics={() => setScreen('analytics')}
     />}
 
+    {screen === 'analytics' && <AnalyticsView rounds={rounds} onOpenRound={(round) => { void openSavedScorecard(round, 'analytics') }} />}
     {screen === 'import' && <ScorecardImport onSave={importCourse} onDone={() => setScreen('setup')} />}
     {screen === 'settings' && <Settings settings={settings} sync={syncState} onChange={setSettings} onSave={saveSettingsNow} />}
 
     {screen === 'history' && <main className="page stack">
-      <header><p className="eyebrow">Round archive</p><h1>History</h1></header>
+      <header className="page-brand-header"><BrandMark compact /><div><p className="eyebrow">Round archive</p><h1>History</h1></div></header>
       {rounds.length ? rounds.map((round) => <section className="card round-history" key={round.id}>
         <div><strong>{round.course_name}</strong><span>{round.date} · {round.tee_name}</span><small>{round.status === 'complete' ? 'Completed' : 'In progress'} · {round.players.length} player{round.players.length === 1 ? '' : 's'}</small></div>
         <div className="history-card-actions">
-          <div className="round-score"><b>{round.total_score ?? '—'}</b><span>{round.to_par == null ? '' : `${round.to_par > 0 ? '+' : ''}${round.to_par}`}</span></div>
+          <div className="round-score"><b>{round.total_score ?? '—'}</b><span>{formatToPar(round.to_par ?? null)}</span></div>
           <button type="button" className="secondary compact-button" onClick={() => openSavedScorecard(round)}>View</button>
           {round.status === 'in_progress' && <button type="button" className="primary compact-button" onClick={() => resumeSavedRound(round.id)}>Resume</button>}
           <button type="button" className="text-button danger-text" onClick={() => removeRound(round)}>Delete</button>
@@ -268,6 +291,7 @@ export default function App() {
     {screen !== 'round' && screen !== 'scorecard' && <nav className="bottom-nav">
       <button className={screen === 'home' ? 'active' : ''} onClick={() => setScreen('home')}><span>⌂</span>Home</button>
       <button className={screen === 'setup' ? 'active' : ''} onClick={() => setScreen('setup')}><span>＋</span>Round</button>
+      <button className={screen === 'analytics' ? 'active' : ''} onClick={() => setScreen('analytics')}><span>⌁</span>Analytics</button>
       <button className={screen === 'history' ? 'active' : ''} onClick={() => setScreen('history')}><span>▤</span>History</button>
       <button className={screen === 'settings' ? 'active' : ''} onClick={() => setScreen('settings')}><span>⚙</span>Settings</button>
     </nav>}

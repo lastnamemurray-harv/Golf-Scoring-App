@@ -1,4 +1,4 @@
-export type Screen = 'home' | 'setup' | 'round' | 'scorecard' | 'history' | 'import' | 'settings'
+export type Screen = 'home' | 'setup' | 'round' | 'scorecard' | 'analytics' | 'history' | 'import' | 'settings'
 export type SyncState = 'local-only' | 'saved' | 'saving' | 'offline' | 'error'
 
 export const PRIMARY_PLAYER_ID = 'primary'
