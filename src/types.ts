@@ -97,6 +97,7 @@ export interface MetricConfig {
   shortGame: boolean
   methodScore: boolean
   notes: boolean
+  showPosters: boolean
 }
 
 export const DEFAULT_METRICS: MetricConfig = {
@@ -114,6 +115,7 @@ export const DEFAULT_METRICS: MetricConfig = {
   shortGame: true,
   methodScore: false,
   notes: true,
+  showPosters: true,
 }
 
 export interface Round {

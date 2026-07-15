@@ -136,6 +136,7 @@ export default function App() {
 
   function getScorePosterKind(hole: HoleResult): ScorePosterKind | null {
     if (hole.score == null || hole.par == null) return null
+    if (hole.score === 1) return 'hole_in_one'
     if (hole.score === 8) return 'snowman'
     const relative = hole.score - hole.par
     if (relative <= -3) return 'albatross'
@@ -148,27 +149,25 @@ export default function App() {
     return null
   }
 
+  function completeAdvance() {
+    setScorePoster(null)
+    setHoleIndex((index) => Math.min(holes.length - 1, index + 1))
+    setIsAdvancing(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   function advanceHole() {
     if (!activeHole || isAdvancing) return
 
-    const nextHole = () => {
-      setScorePoster(null)
-      setHoleIndex((index) => Math.min(holes.length - 1, index + 1))
-      setIsAdvancing(false)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-
     void persistRound()
-    const posterKind = getScorePosterKind(activeHole)
+    const posterKind = activeRound?.tracking_config.showPosters ? getScorePosterKind(activeHole) : null
     if (!posterKind) {
-      nextHole()
+      completeAdvance()
       return
     }
 
     setIsAdvancing(true)
     setScorePoster(posterKind)
-    window.setTimeout(nextHole, 1000)
   }
 
   async function finishRound() {
@@ -346,6 +345,6 @@ export default function App() {
       <button className={screen === 'history' ? 'active' : ''} onClick={() => setScreen('history')}><span>▤</span>History</button>
       <button className={screen === 'settings' ? 'active' : ''} onClick={() => setScreen('settings')}><span>⚙</span>Settings</button>
     </nav>}
-    {scorePoster && <ScorePosterFlash kind={scorePoster} />}
+    {scorePoster && <ScorePosterFlash kind={scorePoster} onDismiss={completeAdvance} />}
   </div>
 }

@@ -2,7 +2,7 @@ import type { MetricConfig, SyncState } from '../types'
 import { DEFAULT_METRICS } from '../types'
 import SyncBadge from './SyncBadge'
 
-type ToggleMetricKey = Exclude<keyof MetricConfig, 'targetZoneYards' | 'roundFocus'>
+type ToggleMetricKey = Exclude<keyof MetricConfig, 'targetZoneYards' | 'roundFocus' | 'showPosters'>
 
 const ITEMS: Array<{ key: ToggleMetricKey; title: string; description: string }> = [
   { key: 'courseDetails', title: 'Yardage and hole handicap', description: 'Show course reference information at the top of each hole.' },
@@ -78,6 +78,23 @@ export default function Settings({ settings, sync, onChange, onSave }: Props) {
         />
       </label>
       <small className="target-zone-example">Example: “Strokes to get within {settings.targetZoneYards} yards of green.”</small>
+    </section>
+
+
+    <section className="card stack target-zone-setting">
+      <div>
+        <p className="eyebrow">Round feedback</p>
+        <h2>Between-hole posters</h2>
+        <p className="muted compact">Show a branded poster after each scored hole. Hole in one overrides all other posters.</p>
+      </div>
+      <label className="toggle-row">
+        <span><strong>Show score posters</strong><small>Display a poster until you tap the screen to continue to the next hole.</small></span>
+        <input
+          type="checkbox"
+          checked={settings.showPosters}
+          onChange={(event) => onChange({ ...settings, showPosters: event.target.checked })}
+        />
+      </label>
     </section>
 
     <section className="settings-list">
