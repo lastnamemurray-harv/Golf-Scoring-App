@@ -69,3 +69,11 @@ Before relying on it for a full round:
 3. Close and reopen the app.
 4. Confirm the active round resumes with saved values.
 5. Turn connectivity back on and confirm the status changes from **Saved offline** to a cloud state on the next save.
+
+## Updating an existing deployment to version 0.3
+
+1. In Supabase, open SQL Editor and run `supabase/migration_v2_round_features.sql`.
+2. Upload the replacement project files to the same GitHub repository, preserving the folder structure.
+3. Commit the changes to `main`.
+4. Cloudflare will build and deploy automatically.
+5. Open the app and refresh it. Installed home-screen versions may need to be closed and reopened once for the new service worker to activate.

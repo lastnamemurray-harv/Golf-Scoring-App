@@ -1,7 +1,21 @@
-Validation date: 2026-07-14
-Command: npm run build
-Result: PASS
-Vite production build completed successfully.
-PWA service worker generated successfully.
-Bundled course records: 74
-Bundled verified hole records: 270
+Golf Method Scorecard PWA v0.3.0
+Validation date: 2026-07-15
+
+Build command: npm run build
+Result: SUCCESS
+
+Validated features in source:
+- Course-specific tee selector with manual/custom tee option
+- Score-only playing partners
+- Home and live scorecard navigation during an active round
+- Simplified group scorecard with strokes and score versus par
+- Detailed scorecard limited to activated metrics
+- Delete in-progress rounds and completed history rounds
+- Manual per-round overrides for par, yardage, and hole handicap
+- Existing metric settings, offline persistence, Supabase sync, PWA and scorecard OCR import
+
+Deployment configuration:
+- Node 22.16.0 via .nvmrc
+- Public npm registry via .npmrc and package-lock.json
+- Cloudflare static assets via wrangler.jsonc
+- No public/_redirects file

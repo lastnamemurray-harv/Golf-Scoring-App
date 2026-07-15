@@ -100,3 +100,16 @@ The round stores a settings snapshot so changing preferences later does not alte
 - Course search and duplicate matching before import
 - Round analytics dashboard and CSV export
 - Optional scorecard image storage in a private Supabase Storage bucket
+
+## Version 0.3 round features
+
+Version 0.3 adds:
+
+- Tee selection by course, including a manual/custom tee option
+- Score-only playing partners
+- Return-to-home and live scorecard buttons during a round
+- Simplified group scorecard and detailed metric scorecard
+- Deletion of in-progress and completed rounds
+- Round-specific manual overrides for par, yardage, and hole handicap
+
+Existing Supabase projects must run `supabase/migration_v2_round_features.sql` once before deploying this version.

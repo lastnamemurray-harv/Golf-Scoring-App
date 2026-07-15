@@ -1,4 +1,4 @@
-import { get, set } from 'idb-keyval'
+import { del, get, set } from 'idb-keyval'
 import type { Course, CourseHole, MetricConfig, Round, HoleResult } from '../types'
 import { DEFAULT_METRICS } from '../types'
 
@@ -9,6 +9,7 @@ const KEYS = {
   rounds: 'golf:rounds',
   activeRound: 'golf:active-round-id',
   holesPrefix: 'golf:round-holes:',
+  pendingRoundDeletes: 'golf:pending-round-deletes',
 }
 
 export async function loadCourses(): Promise<Course[]> {
@@ -30,6 +31,13 @@ export async function upsertLocalRound(round: Round): Promise<void> {
   const next = [round, ...rounds.filter((item) => item.id !== round.id)]
   await saveRounds(next)
 }
+export async function deleteLocalRound(roundId: string): Promise<void> {
+  const rounds = await loadRounds()
+  await saveRounds(rounds.filter((round) => round.id !== roundId))
+  await del(KEYS.holesPrefix + roundId)
+  const activeRoundId = await getActiveRoundId()
+  if (activeRoundId === roundId) await setActiveRoundId(null)
+}
 export async function saveLocalHoleResults(roundId: string, holes: HoleResult[]): Promise<void> {
   await set(KEYS.holesPrefix + roundId, holes)
 }
@@ -38,3 +46,13 @@ export async function loadLocalHoleResults(roundId: string): Promise<HoleResult[
 }
 export async function setActiveRoundId(roundId: string | null): Promise<void> { await set(KEYS.activeRound, roundId) }
 export async function getActiveRoundId(): Promise<string | null> { return (await get<string>(KEYS.activeRound)) ?? null }
+
+export async function loadPendingRoundDeletes(): Promise<string[]> { return (await get<string[]>(KEYS.pendingRoundDeletes)) ?? [] }
+export async function queuePendingRoundDelete(roundId: string): Promise<void> {
+  const ids = await loadPendingRoundDeletes()
+  if (!ids.includes(roundId)) await set(KEYS.pendingRoundDeletes, [...ids, roundId])
+}
+export async function clearPendingRoundDelete(roundId: string): Promise<void> {
+  const ids = await loadPendingRoundDeletes()
+  await set(KEYS.pendingRoundDeletes, ids.filter((id) => id !== roundId))
+}

@@ -1,9 +1,10 @@
 import seedData from '../data/seedCourses.json'
 import type { Course, CourseHole, HoleResult, ImportedCourseDraft, MetricConfig, Round, SyncState } from '../types'
+import { DEFAULT_METRICS, DEFAULT_PLAYERS } from '../types'
 import { ensureAnonymousSession, isCloudConfigured, supabase } from './supabase'
 import {
-  getActiveRoundId, loadCourseHoles, loadCourses, loadLocalHoleResults, loadRounds, loadSettings,
-  saveCourseHoles, saveCourses, saveLocalHoleResults, saveSettings, setActiveRoundId, upsertLocalRound,
+  clearPendingRoundDelete, deleteLocalRound, getActiveRoundId, loadCourseHoles, loadCourses, loadLocalHoleResults, loadPendingRoundDeletes, loadRounds, loadSettings,
+  queuePendingRoundDelete, saveCourseHoles, saveCourses, saveLocalHoleResults, saveSettings, setActiveRoundId, upsertLocalRound,
 } from './localDb'
 
 export interface AppData {
@@ -22,6 +23,18 @@ function mergeById<T extends { id: string }>(base: T[], incoming: T[]): T[] {
   return [...map.values()]
 }
 
+export function normalizeRound(round: Round): Round {
+  return {
+    ...round,
+    tracking_config: { ...DEFAULT_METRICS, ...(round.tracking_config ?? {}) },
+    players: Array.isArray(round.players) && round.players.length ? round.players : DEFAULT_PLAYERS.map((player) => ({ ...player })),
+  }
+}
+
+export function normalizeHole(hole: HoleResult): HoleResult {
+  return { ...hole, player_scores: hole.player_scores ?? {} }
+}
+
 export async function initializeAppData(): Promise<AppData> {
   let courses = await loadCourses()
   let courseHoles = await loadCourseHoles()
@@ -37,6 +50,10 @@ export async function initializeAppData(): Promise<AppData> {
   if (isCloudConfigured && navigator.onLine && supabase) {
     try {
       cloudUserId = await ensureAnonymousSession()
+      for (const roundId of await loadPendingRoundDeletes()) {
+        const { error: deleteError } = await supabase.from('rounds').delete().eq('id', roundId)
+        if (!deleteError) await clearPendingRoundDelete(roundId)
+      }
       const [{ data: cloudCourses, error: courseError }, { data: cloudHoles, error: holeError }, { data: cloudRounds, error: roundsError }] = await Promise.all([
         supabase.from('courses').select('*'),
         supabase.from('course_holes').select('*'),
@@ -50,7 +67,7 @@ export async function initializeAppData(): Promise<AppData> {
       await saveCourses(courses)
       await saveCourseHoles(courseHoles)
       if (cloudRounds?.length) {
-        for (const round of cloudRounds as Round[]) await upsertLocalRound(round)
+        for (const rawRound of cloudRounds as Round[]) await upsertLocalRound(normalizeRound(rawRound))
       }
       const { data: cloudSettings } = await supabase.from('user_settings').select('metric_config').maybeSingle()
       if (cloudSettings?.metric_config) await saveSettings(cloudSettings.metric_config as MetricConfig)
@@ -59,10 +76,13 @@ export async function initializeAppData(): Promise<AppData> {
     }
   }
 
+  const localRounds = (await loadRounds()).map(normalizeRound)
+  for (const round of localRounds) await upsertLocalRound(round)
+
   return {
     courses,
     courseHoles,
-    rounds: await loadRounds(),
+    rounds: localRounds,
     settings: await loadSettings(),
     activeRoundId: await getActiveRoundId(),
     cloudUserId,
@@ -148,17 +168,15 @@ export async function saveImportedCourse(draft: ImportedCourseDraft): Promise<{ 
     const cloudHoles = holes.map((hole) => ({ ...hole, owner_id: userId }))
     const { error: holeError } = await supabase.from('course_holes').insert(cloudHoles)
     if (holeError) throw holeError
-    const refreshedCourses = await loadCourses()
-    const refreshedHoles = await loadCourseHoles()
-    await saveCourses([course, ...refreshedCourses.filter((item) => item.course_key !== courseKey)])
-    await saveCourseHoles([...holes, ...refreshedHoles.filter((item) => item.course_key !== courseKey)])
     return { course, holes, sync: 'saved' }
   } catch {
     return { course, holes, sync: 'error' }
   }
 }
 
-export async function saveRoundAndHoles(round: Round, holes: HoleResult[]): Promise<SyncState> {
+export async function saveRoundAndHoles(rawRound: Round, rawHoles: HoleResult[]): Promise<SyncState> {
+  const round = normalizeRound(rawRound)
+  const holes = rawHoles.map(normalizeHole)
   await upsertLocalRound(round)
   await saveLocalHoleResults(round.id, holes)
   await setActiveRoundId(round.status === 'in_progress' ? round.id : null)
@@ -181,7 +199,45 @@ export async function saveRoundAndHoles(round: Round, holes: HoleResult[]): Prom
 
 export async function loadRoundBundle(roundId: string): Promise<{ round: Round | null; holes: HoleResult[] }> {
   const rounds = await loadRounds()
-  return { round: rounds.find((r) => r.id === roundId) ?? null, holes: await loadLocalHoleResults(roundId) }
+  const round = rounds.find((item) => item.id === roundId)
+  let holes = (await loadLocalHoleResults(roundId)).map(normalizeHole)
+
+  if ((!holes.length || holes.every((hole) => hole.score == null)) && isCloudConfigured && navigator.onLine && supabase) {
+    try {
+      await ensureAnonymousSession()
+      const { data, error } = await supabase.from('hole_results').select('*').eq('round_id', roundId).order('hole_number')
+      if (error) throw error
+      if (data?.length) {
+        holes = (data as HoleResult[]).map(normalizeHole)
+        await saveLocalHoleResults(roundId, holes)
+      }
+    } catch {
+      // Keep the locally available bundle when the cloud is unavailable.
+    }
+  }
+
+  return { round: round ? normalizeRound(round) : null, holes }
 }
 
-export async function listRounds(): Promise<Round[]> { return loadRounds() }
+export async function deleteRound(roundId: string): Promise<SyncState> {
+  await deleteLocalRound(roundId)
+  if (!isCloudConfigured || !supabase) return 'local-only'
+  if (!navigator.onLine) {
+    await queuePendingRoundDelete(roundId)
+    return 'offline'
+  }
+  try {
+    await ensureAnonymousSession()
+    const { error } = await supabase.from('rounds').delete().eq('id', roundId)
+    if (error) throw error
+    await clearPendingRoundDelete(roundId)
+    return 'saved'
+  } catch {
+    await queuePendingRoundDelete(roundId)
+    return 'error'
+  }
+}
+
+export async function listRounds(): Promise<Round[]> {
+  return (await loadRounds()).map(normalizeRound)
+}

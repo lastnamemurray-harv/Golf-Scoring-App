@@ -1,5 +1,17 @@
-export type Screen = 'home' | 'setup' | 'round' | 'history' | 'import' | 'settings'
+export type Screen = 'home' | 'setup' | 'round' | 'scorecard' | 'history' | 'import' | 'settings'
 export type SyncState = 'local-only' | 'saved' | 'saving' | 'offline' | 'error'
+
+export const PRIMARY_PLAYER_ID = 'primary'
+
+export interface Player {
+  id: string
+  name: string
+  is_primary: boolean
+}
+
+export const DEFAULT_PLAYERS: Player[] = [
+  { id: PRIMARY_PLAYER_ID, name: 'You', is_primary: true },
+]
 
 export interface Course {
   id: string
@@ -80,6 +92,7 @@ export interface Round {
   target_score: number | null
   primary_focus: string
   tracking_config: MetricConfig
+  players: Player[]
   total_score?: number | null
   to_par?: number | null
   method_pct?: number | null
@@ -102,6 +115,7 @@ export interface HoleResult {
   down_zone_actual: number | null
   down_zone_point: number | null
   score: number | null
+  player_scores: Record<string, number | null>
   putts: number | null
   inside_4ft_result: 'Made' | 'Missed' | 'N/A' | ''
   made_putt_length_ft: number | null
