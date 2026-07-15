@@ -138,3 +138,13 @@ RoundWise now stores tee-level par, total yardage, course rating, and slope in a
 - Details matrix with metrics fixed on the left and holes across the top
 
 Existing Supabase projects must run `supabase/migration_v4_player_handicap_tees.sql` before using v0.6 cloud sync.
+
+
+## v0.8 target-zone and calculated-stat enhancements
+
+- Configurable target-zone distance in Settings, defaulting to 100 yards
+- Automatic GIR calculation using `(score - putts) <= (par - 2)`
+- Dynamic on-course descriptions for entering and playing from inside the target zone
+- Calculated results grouped below Notes in the on-course and Details views
+
+No Supabase migration is required for v0.8.

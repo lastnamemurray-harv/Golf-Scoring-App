@@ -70,15 +70,9 @@ export default function ScorecardView({ round, holes, active, onBack, onHome, on
     if (settings.scoringZone) rows.push(
       { label: 'Enter target', values: (hole) => hole.entering_zone_target ?? '—' },
       { label: 'Enter actual', values: (hole) => hole.entering_zone_actual ?? '—' },
-      { label: 'Enter point', values: (hole) => pointStatus(hole.entering_zone_point) },
       { label: 'Down actual', values: (hole) => hole.down_zone_actual ?? '—' },
-      { label: 'Down point', values: (hole) => pointStatus(hole.down_zone_point) },
     )
-    if (settings.gir) rows.push({ label: 'GIR', values: (hole) => yesNoStatus(hole.gir) })
-    if (settings.shortGame) rows.push(
-      { label: 'Chips / pitches', values: (hole) => hole.chips_pitches ?? '—' },
-      { label: 'Up & down', values: (hole) => hole.up_down || '—' },
-    )
+    if (settings.shortGame) rows.push({ label: 'Chips / pitches', values: (hole) => hole.chips_pitches ?? '—' })
     if (settings.putting) rows.push({ label: 'Putts', values: (hole) => puttStatus(hole.putts) })
     if (settings.inside4ft) rows.push({ label: 'Inside 4 ft', values: (hole) => hole.inside_4ft_result || '—' })
     if (settings.madePuttLength) rows.push({ label: 'Made putt (ft)', values: (hole) => hole.made_putt_length_ft ?? '—' })
@@ -91,6 +85,12 @@ export default function ScorecardView({ round, holes, active, onBack, onHome, on
       { label: 'Reset', values: (hole) => hole.reset ?? '—' },
     )
     if (settings.notes) rows.push({ label: 'Notes', values: (hole) => hole.notes || '—' })
+    if (settings.scoringZone) rows.push(
+      { label: 'Enter point', values: (hole) => pointStatus(hole.entering_zone_point) },
+      { label: 'Down point', values: (hole) => pointStatus(hole.down_zone_point) },
+    )
+    if (settings.gir) rows.push({ label: 'GIR', values: (hole) => yesNoStatus(hole.gir) })
+    if (settings.shortGame) rows.push({ label: 'Up & down', values: (hole) => yesNoStatus(hole.up_down) })
     return rows
   }, [holes.length, players, primary, round, scoreMode, settings])
 
@@ -201,15 +201,17 @@ export default function ScorecardView({ round, holes, active, onBack, onHome, on
               {settings.courseDetails && <><div className="detail-stat"><span>Yards</span><strong>{hole.yardage ?? '—'}</strong></div><div className="detail-stat"><span>HCP</span><strong>{hole.hole_handicap ?? '—'}</strong></div></>}
               {settings.teeClub && <div className="detail-stat"><span>Tee club</span><strong>{hole.club_used_off_tee || '—'}</strong></div>}
               {settings.teeResult && <div className="detail-stat"><span>Tee result</span><strong>{hole.tee_result || '—'}</strong></div>}
-              {settings.scoringZone && <><div className="detail-stat"><span>Enter zone</span><strong>{hole.entering_zone_actual ?? '—'} / {hole.entering_zone_target ?? '—'} · {pointStatus(hole.entering_zone_point)} pt</strong></div><div className="detail-stat"><span>Down in zone</span><strong>{hole.down_zone_actual ?? '—'} / 3 · {pointStatus(hole.down_zone_point)} pt</strong></div></>}
-              {settings.gir && <div className="detail-stat"><span>GIR</span>{yesNoStatus(hole.gir)}</div>}
-              {settings.shortGame && <><div className="detail-stat"><span>Chips / pitches</span><strong>{hole.chips_pitches ?? '—'}</strong></div><div className="detail-stat"><span>Up & down</span><strong>{hole.up_down || '—'}</strong></div></>}
+              {settings.scoringZone && <><div className="detail-stat"><span>Enter zone</span><strong>{hole.entering_zone_actual ?? '—'} / {hole.entering_zone_target ?? '—'}</strong></div><div className="detail-stat"><span>Down in zone</span><strong>{hole.down_zone_actual ?? '—'} / 3</strong></div></>}
+              {settings.shortGame && <div className="detail-stat"><span>Chips / pitches</span><strong>{hole.chips_pitches ?? '—'}</strong></div>}
               {settings.putting && <div className="detail-stat"><span>Putts</span>{puttStatus(hole.putts)}</div>}
               {settings.inside4ft && <div className="detail-stat"><span>Inside 4 ft</span><strong>{hole.inside_4ft_result || '—'}</strong></div>}
               {settings.madePuttLength && <div className="detail-stat"><span>Made putt</span><strong>{hole.made_putt_length_ft == null ? '—' : `${hole.made_putt_length_ft} ft`}</strong></div>}
               {settings.penalties && <div className="detail-stat"><span>Penalties</span><strong>{hole.penalty_strokes}</strong></div>}
               {settings.methodScore && <div className="detail-stat wide"><span>Method score</span><strong>{methodValues.length ? `${methodScore}/${methodValues.length}` : '—'}</strong><small>Plan {hole.plan ?? '—'} · Routine {hole.routine ?? '—'} · Commit {hole.commit ?? '—'} · Smart {hole.smart_decision ?? '—'} · Reset {hole.reset ?? '—'}</small></div>}
               {settings.notes && hole.notes && <div className="detail-stat wide"><span>Notes</span><strong>{hole.notes}</strong></div>}
+              {settings.scoringZone && <><div className="detail-stat"><span>Enter point</span>{pointStatus(hole.entering_zone_point)}</div><div className="detail-stat"><span>Down point</span>{pointStatus(hole.down_zone_point)}</div></>}
+              {settings.gir && <div className="detail-stat"><span>GIR</span>{yesNoStatus(hole.gir)}</div>}
+              {settings.shortGame && <div className="detail-stat"><span>Up & down</span>{yesNoStatus(hole.up_down)}</div>}
             </div>
           </article>
         })}

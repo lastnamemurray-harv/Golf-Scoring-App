@@ -42,8 +42,26 @@ export function normalizeRound(round: Round): Round {
   }
 }
 
+function calculatedGir(hole: HoleResult): HoleResult['gir'] {
+  if (hole.score == null || hole.putts == null || hole.par == null) return hole.gir ?? ''
+  return hole.score - hole.putts <= hole.par - 2 ? 'Yes' : 'No'
+}
+
+function calculatedUpDown(hole: HoleResult): HoleResult['up_down'] {
+  if (hole.chips_pitches == null) return hole.up_down ?? ''
+  if (hole.chips_pitches === 0) return 'N/A'
+  if (hole.putts == null) return ''
+  return hole.chips_pitches === 1 && hole.putts <= 1 ? 'Yes' : 'No'
+}
+
 export function normalizeHole(hole: HoleResult): HoleResult {
-  return { ...hole, player_scores: hole.player_scores ?? {}, player_hole_info: hole.player_hole_info ?? {} }
+  return {
+    ...hole,
+    player_scores: hole.player_scores ?? {},
+    player_hole_info: hole.player_hole_info ?? {},
+    gir: calculatedGir(hole),
+    up_down: calculatedUpDown(hole),
+  }
 }
 
 export async function initializeAppData(): Promise<AppData> {

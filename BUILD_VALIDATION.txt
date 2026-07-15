@@ -1,13 +1,22 @@
-RoundWise v0.7 visual tee-result and scorecard detail enhancement
+RoundWise v0.8 build validation
 
-Validation completed: 2026-07-15
-- TypeScript project build passed
-- Vite production build passed
-- 104 modules transformed
-- PWA service worker generated
-- 13 precache entries generated
-- Public npm registry confirmed in package-lock.json
-- No Supabase schema migration required
+Validated: 2026-07-15
 
-Build command:
-npm run build
+Commands:
+  npm install --no-audit --no-fund --progress=false
+  npm run build
+
+Results:
+  TypeScript build: PASS
+  Vite production build: PASS
+  PWA generateSW: PASS
+  Service worker generated: dist/sw.js
+
+Functional updates verified:
+  - Target-zone setting defaults to 100 yards
+  - On-course scoring-zone descriptions use the selected yardage
+  - GIR is calculated as (score - putts) <= (par - 2)
+  - Up-and-down remains automatically calculated
+  - Calculated results appear after Notes in on-course and Details views
+
+Supabase migration required: No

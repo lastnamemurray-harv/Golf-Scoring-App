@@ -393,3 +393,18 @@ h1,h2,h3,p { margin:0; } h1,h2,h3,.roundwise-brand strong { font-family:"Montser
   .tee-result-cell { min-height:62px; }
   .tee-result-cell > strong { font-size:.64rem; }
 }
+
+
+/* RoundWise v0.8 — configurable target zone and calculated-results placement */
+.target-zone-setting { border-color:rgba(57,94,60,.25); background:linear-gradient(145deg,#FFFFFF,#F2F7F3); }
+.target-zone-setting .field { max-width:220px; }
+.target-zone-example { color:var(--fairway); font-weight:800; line-height:1.4; }
+.metric-row.metric-input-only { grid-template-columns:minmax(120px,1fr) minmax(135px,1.1fr); align-items:end; }
+.metric-row.metric-input-only > div:first-child small { display:block; margin-top:4px; color:var(--slate); font-size:.72rem; line-height:1.35; }
+.calculated-results-card { border-color:rgba(57,94,60,.22); background:linear-gradient(160deg,#FFFFFF,#F5F8F5); }
+.calculated-results-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.calculated-results-grid .auto-result { min-height:92px; align-content:center; }
+@media (max-width:520px) {
+  .metric-row.metric-input-only { grid-template-columns:1fr; }
+  .calculated-results-grid { grid-template-columns:1fr; }
+}

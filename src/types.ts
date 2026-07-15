@@ -85,6 +85,7 @@ export interface CourseTee {
 export interface MetricConfig {
   courseDetails: boolean
   scoringZone: boolean
+  targetZoneYards: number
   teeClub: boolean
   teeResult: boolean
   gir: boolean
@@ -100,6 +101,7 @@ export interface MetricConfig {
 export const DEFAULT_METRICS: MetricConfig = {
   courseDetails: true,
   scoringZone: true,
+  targetZoneYards: 100,
   teeClub: true,
   teeResult: true,
   gir: true,
