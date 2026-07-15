@@ -89,6 +89,10 @@ export default function App() {
 
   const activeHole = holes[holeIndex]
   const completedCount = useMemo(() => holes.filter((hole) => hole.score != null).length, [holes])
+  const cumulativeToPar = useMemo(() => {
+    const scored = holes.filter((hole) => hole.score != null && hole.par != null)
+    return scored.length ? scored.reduce((sum, hole) => sum + Number(hole.score) - Number(hole.par), 0) : null
+  }, [holes])
   const completedRounds = useMemo(() => rounds.filter((round) => round.status === 'complete'), [rounds])
   const bestRound = useMemo(() => {
     const scored = completedRounds.filter((round) => round.total_score != null)
@@ -255,6 +259,7 @@ export default function App() {
       totalHoles={holes.length}
       settings={activeRound.tracking_config}
       syncState={syncState}
+      cumulativeToPar={cumulativeToPar}
       onChange={updateHole}
       onHome={() => { void persistRound(); setScreen('home') }}
       onScorecard={() => { void persistRound(); openActiveScorecard('round') }}

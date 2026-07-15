@@ -3,6 +3,7 @@ import type { HoleResult, MetricConfig, Round, SyncState } from '../types'
 import NumberField from './NumberField'
 import Segmented from './Segmented'
 import SyncBadge from './SyncBadge'
+import { formatToPar } from '../lib/analytics'
 
 const CLUBS = ['Driver','3-Wood','5-Wood','7-Wood','2-Hybrid','3-Hybrid','4-Hybrid','3-Iron','4-Iron','5-Iron','6-Iron','7-Iron','8-Iron','9-Iron','PW','GW','SW','LW','Putter','Other']
 const TEE_RESULTS = ['FIR','Miss L','Miss R','Short','Long','Trouble','Penalty','N/A']
@@ -14,6 +15,7 @@ interface Props {
   totalHoles: number
   settings: MetricConfig
   syncState: SyncState
+  cumulativeToPar: number | null
   onChange: (hole: HoleResult) => void
   onPrevious: () => void
   onNext: () => void
@@ -23,7 +25,7 @@ interface Props {
 }
 
 export default function HoleEntry({
-  round, hole, holeIndex, totalHoles, settings, syncState,
+  round, hole, holeIndex, totalHoles, settings, syncState, cumulativeToPar,
   onChange, onPrevious, onNext, onFinish, onHome, onScorecard,
 }: Props) {
   const enteringPoint = hole.entering_zone_actual == null || hole.entering_zone_target == null
@@ -71,7 +73,10 @@ export default function HoleEntry({
       </div>
       <header className="hole-header">
         <div><p className="eyebrow">{round.course_name} · {round.tee_name}</p><h1>Hole {hole.hole_number}</h1></div>
-        <SyncBadge state={syncState} />
+        <div className="hole-status-stack">
+          <div className="cumulative-to-par"><span>Round</span><strong>{formatToPar(cumulativeToPar)}</strong></div>
+          <SyncBadge state={syncState} />
+        </div>
       </header>
       <div className="hole-progress"><span style={{ width: `${((holeIndex + 1) / totalHoles) * 100}%` }} /></div>
       <section className="hole-hero">
@@ -101,7 +106,7 @@ export default function HoleEntry({
           <div className="guest-score-grid">
             {guests.map((player) => <NumberField
               key={player.id}
-              label={player.name}
+              label={`${player.name} · ${player.tee_name || round.tee_name} · HCP ${player.playing_handicap ?? '—'}`}
               value={hole.player_scores?.[player.id] ?? null}
               min={1}
               max={15}

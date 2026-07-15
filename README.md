@@ -1,8 +1,8 @@
 # RoundWise Golf Performance Tracker
 
-## RoundWise v0.4
+## RoundWise v0.6
 
-The app now includes the RoundWise brand identity, branded PWA icons, a mobile analytics dashboard, score-to-par trends, round summaries, and automated strengths/opportunities after each round.
+This release adds per-player tee and handicap selection, gross/net scorecards, traditional circle-and-square scoring symbols, live cumulative score-to-par, an expanded round summary, and a horizontally scrollable hole-by-hole details matrix.
 
 A mobile-first golf scorecard that works as an installable Progressive Web App on Cloudflare Pages.
 
@@ -110,7 +110,7 @@ The round stores a settings snapshot so changing preferences later does not alte
 Version 0.3 adds:
 
 - Tee selection by course, including a manual/custom tee option
-- Score-only playing partners
+- Score-only playing partners with individual tee and playing-handicap selections
 - Return-to-home and live scorecard buttons during a round
 - Simplified group scorecard and detailed metric scorecard
 - Deletion of in-progress and completed rounds
@@ -121,3 +121,16 @@ Existing Supabase projects must run `supabase/migration_v2_round_features.sql` o
 ## v0.5 tee database
 
 RoundWise now stores tee-level par, total yardage, course rating, and slope in a dedicated `course_tees` table. The bundled reference includes multiple tee options for 15 detailed Denver-area courses. Hole-level data remains tee-specific and is only prefilled when verified for that exact tee.
+
+
+## v0.6 scorecard and multiplayer enhancements
+
+- Individual tee and playing handicap for every golfer
+- Gross/net score toggle using the saved playing handicap and hole stroke index
+- Traditional scorecard symbols: circles for under par and squares for over par
+- Live cumulative score to par while entering a round
+- Icon-only RoundWise scorecard header with course and player metadata
+- Total made-putt feet, separate scoring-zone results, five method-category rates, up-and-down percentage, tee-shot distribution, and summarized notes
+- Details matrix with metrics fixed on the left and holes across the top
+
+Existing Supabase projects must run `supabase/migration_v4_player_handicap_tees.sql` before using v0.6 cloud sync.

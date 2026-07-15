@@ -1,6 +1,11 @@
-RoundWise v0.5 tee database update
+RoundWise v0.6 multiplayer and scorecard enhancement
 Production build: PASS (TypeScript + Vite + PWA generateSW)
 Bundled courses: 74
 Bundled tee records: 67 across 15 verified-scorecard courses
 Bundled hole records: 270
-Course tee foreign-key and uniqueness checks: PASS
+New migration: migration_v4_player_handicap_tees.sql
+Player tee/handicap normalization: PASS
+Gross/net handicap allocation: IMPLEMENTED
+Traditional circle/square score symbols: IMPLEMENTED
+Round summary expansion: IMPLEMENTED
+Details matrix: IMPLEMENTED

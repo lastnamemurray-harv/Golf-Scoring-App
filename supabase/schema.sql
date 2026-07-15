@@ -107,6 +107,7 @@ create table if not exists public.hole_results (
   down_zone_point integer check (down_zone_point in (0,1)),
   score integer,
   player_scores jsonb not null default '{}'::jsonb,
+  player_hole_info jsonb not null default '{}'::jsonb,
   putts integer,
   inside_4ft_result text not null default '',
   made_putt_length_ft numeric,

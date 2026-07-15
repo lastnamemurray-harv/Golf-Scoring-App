@@ -1,6 +1,6 @@
 import seedData from '../data/seedCourses.json'
 import type { Course, CourseHole, CourseTee, HoleResult, ImportedCourseDraft, MetricConfig, Round, SyncState } from '../types'
-import { DEFAULT_METRICS, DEFAULT_PLAYERS } from '../types'
+import { DEFAULT_METRICS, DEFAULT_PLAYERS, PRIMARY_PLAYER_ID } from '../types'
 import { ensureAnonymousSession, isCloudConfigured, supabase } from './supabase'
 import {
   clearPendingRoundDelete, deleteLocalRound, getActiveRoundId, loadCourseHoles, loadCourseTees, loadCourses, loadLocalHoleResults, loadPendingRoundDeletes, loadRounds, loadSettings,
@@ -25,15 +25,25 @@ function mergeById<T extends { id: string }>(base: T[], incoming: T[]): T[] {
 }
 
 export function normalizeRound(round: Round): Round {
+  const sourcePlayers = Array.isArray(round.players) && round.players.length ? round.players : DEFAULT_PLAYERS
+  const players = sourcePlayers.map((player) => ({
+    ...player,
+    playing_handicap: player.playing_handicap ?? (player.id === PRIMARY_PLAYER_ID || player.is_primary ? round.playing_handicap ?? null : null),
+    tee_name: player.tee_name ?? (player.id === PRIMARY_PLAYER_ID || player.is_primary ? round.tee_name : ''),
+    tee_par: player.tee_par ?? (player.id === PRIMARY_PLAYER_ID || player.is_primary ? round.tee_par ?? null : null),
+    tee_yardage: player.tee_yardage ?? (player.id === PRIMARY_PLAYER_ID || player.is_primary ? round.tee_yardage ?? null : null),
+    course_rating: player.course_rating ?? (player.id === PRIMARY_PLAYER_ID || player.is_primary ? round.course_rating ?? null : null),
+    course_slope: player.course_slope ?? (player.id === PRIMARY_PLAYER_ID || player.is_primary ? round.course_slope ?? null : null),
+  }))
   return {
     ...round,
     tracking_config: { ...DEFAULT_METRICS, ...(round.tracking_config ?? {}) },
-    players: Array.isArray(round.players) && round.players.length ? round.players : DEFAULT_PLAYERS.map((player) => ({ ...player })),
+    players,
   }
 }
 
 export function normalizeHole(hole: HoleResult): HoleResult {
-  return { ...hole, player_scores: hole.player_scores ?? {} }
+  return { ...hole, player_scores: hole.player_scores ?? {}, player_hole_info: hole.player_hole_info ?? {} }
 }
 
 export async function initializeAppData(): Promise<AppData> {

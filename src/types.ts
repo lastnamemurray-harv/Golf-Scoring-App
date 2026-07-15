@@ -7,11 +7,33 @@ export interface Player {
   id: string
   name: string
   is_primary: boolean
+  playing_handicap: number | null
+  tee_name: string
+  tee_par: number | null
+  tee_yardage: number | null
+  course_rating: number | null
+  course_slope: number | null
 }
 
 export const DEFAULT_PLAYERS: Player[] = [
-  { id: PRIMARY_PLAYER_ID, name: 'You', is_primary: true },
+  {
+    id: PRIMARY_PLAYER_ID,
+    name: 'You',
+    is_primary: true,
+    playing_handicap: null,
+    tee_name: '',
+    tee_par: null,
+    tee_yardage: null,
+    course_rating: null,
+    course_slope: null,
+  },
 ]
+
+export interface PlayerHoleInfo {
+  par: number | null
+  yardage: number | null
+  handicap: number | null
+}
 
 export interface Course {
   id: string
@@ -134,6 +156,7 @@ export interface HoleResult {
   down_zone_point: number | null
   score: number | null
   player_scores: Record<string, number | null>
+  player_hole_info: Record<string, PlayerHoleInfo>
   putts: number | null
   inside_4ft_result: 'Made' | 'Missed' | 'N/A' | ''
   made_putt_length_ft: number | null

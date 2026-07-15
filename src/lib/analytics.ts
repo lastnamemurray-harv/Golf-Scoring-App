@@ -29,6 +29,10 @@ export interface RoundAnalysis {
   blowUpHoles: number
   damageEvents: number
   longestPutt: number | null
+  totalMadePuttFeet: number
+  teeResults: Array<{ label: string; value: number }>
+  notes: Array<{ hole: number; text: string }>
+  notesSummary: string
   birdiesOrBetter: number
   pars: number
   bogeys: number
@@ -94,6 +98,25 @@ function lowestMethodCategory(categories: RoundAnalysis['methodCategories']): [s
   return eligible.sort((a, b) => (a[1].rate ?? 1) - (b[1].rate ?? 1))[0]
 }
 
+
+function buildNotesSummary(notes: Array<{ hole: number; text: string }>): string {
+  if (!notes.length) return 'No hole notes were recorded.'
+  const groups = [
+    ['left misses', ['left', 'pull', 'hook']],
+    ['right misses', ['right', 'push', 'slice']],
+    ['shots finishing short', ['short', 'thin', 'chunk', 'fat']],
+    ['shots finishing long', ['long', 'over', 'flyer']],
+    ['putting', ['putt', 'pace', 'speed', 'read']],
+    ['decision-making', ['club', 'target', 'decision', 'hero']],
+  ] as const
+  const text = notes.map((note) => note.text.toLowerCase()).join(' ')
+  const themes = groups.map(([label, terms]) => ({ label, count: terms.reduce((sum, term) => sum + (text.match(new RegExp(`\b${term}\w*`, 'g'))?.length ?? 0), 0) }))
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.count - a.count)
+  if (!themes.length) return `${notes.length} hole note${notes.length === 1 ? '' : 's'} recorded. Review the hole list below for context.`
+  const labels = themes.slice(0, 2).map((item) => item.label)
+  return `${notes.length} hole note${notes.length === 1 ? '' : 's'} recorded. The most common themes were ${labels.join(' and ')}.`
+}
 export function analyzeRound(_round: Round, holes: HoleResult[]): RoundAnalysis {
   const completed = holes.filter((hole) => hole.score != null && hole.par != null)
   const totalScore = completed.length ? completed.reduce((sum, hole) => sum + Number(hole.score), 0) : null
@@ -128,6 +151,10 @@ export function analyzeRound(_round: Round, holes: HoleResult[]): RoundAnalysis 
   const multiChipHoles = holes.filter((hole) => (hole.chips_pitches ?? 0) >= 2).length
   const blowUpHoles = relativeHoles.filter(({ relative }) => relative >= 3).length
   const longestPuttValues = holes.map((hole) => hole.made_putt_length_ft).filter((value): value is number => value != null)
+  const totalMadePuttFeet = longestPuttValues.reduce((sum, value) => sum + value, 0)
+  const teeResultLabels = ['FIR', 'Miss L', 'Miss R', 'Short', 'Long', 'Trouble', 'Penalty']
+  const teeResults = teeResultLabels.map((label) => ({ label, value: holes.filter((hole) => hole.tee_result === label).length })).filter((item) => item.value > 0)
+  const notes = holes.filter((hole) => hole.notes.trim()).map((hole) => ({ hole: hole.hole_number, text: hole.notes.trim() }))
 
   const analysis: RoundAnalysis = {
     completedHoles: completed.length,
@@ -155,6 +182,10 @@ export function analyzeRound(_round: Round, holes: HoleResult[]): RoundAnalysis 
     blowUpHoles,
     damageEvents: penalties + threePutts + multiChipHoles,
     longestPutt: longestPuttValues.length ? Math.max(...longestPuttValues) : null,
+    totalMadePuttFeet,
+    teeResults,
+    notes,
+    notesSummary: buildNotesSummary(notes),
     birdiesOrBetter: relativeHoles.filter(({ relative }) => relative <= -1).length,
     pars: relativeHoles.filter(({ relative }) => relative === 0).length,
     bogeys: relativeHoles.filter(({ relative }) => relative === 1).length,

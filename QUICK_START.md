@@ -77,3 +77,12 @@ Before relying on it for a full round:
 3. Commit the changes to `main`.
 4. Cloudflare will build and deploy automatically.
 5. Open the app and refresh it. Installed home-screen versions may need to be closed and reopened once for the new service worker to activate.
+
+
+## Updating an existing deployment to version 0.6
+
+1. Run `supabase/migration_v4_player_handicap_tees.sql` in the Supabase SQL Editor.
+2. Upload the replacement files to the root of the existing GitHub repository.
+3. Commit to `main`; Cloudflare will deploy automatically.
+4. Completely close and reopen the installed PWA so the new service worker activates.
+5. Start a test round with two players using different tees and handicaps, then confirm Gross/Net scorecard views.
