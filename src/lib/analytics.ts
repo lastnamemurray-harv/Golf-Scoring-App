@@ -152,7 +152,7 @@ export function analyzeRound(_round: Round, holes: HoleResult[]): RoundAnalysis 
   const blowUpHoles = relativeHoles.filter(({ relative }) => relative >= 3).length
   const longestPuttValues = holes.map((hole) => hole.made_putt_length_ft).filter((value): value is number => value != null)
   const totalMadePuttFeet = longestPuttValues.reduce((sum, value) => sum + value, 0)
-  const teeResultLabels = ['FIR', 'Miss L', 'Miss R', 'Short', 'Long', 'Trouble', 'Penalty']
+  const teeResultLabels = ['FIR', 'Green', 'Miss L', 'Miss R', 'Long Left', 'Long', 'Long Right', 'Short', 'Bunker', 'Water', 'Trouble', 'Penalty']
   const teeResults = teeResultLabels.map((label) => ({ label, value: holes.filter((hole) => hole.tee_result === label).length })).filter((item) => item.value > 0)
   const notes = holes.filter((hole) => hole.notes.trim()).map((hole) => ({ hole: hole.hole_number, text: hole.notes.trim() }))
 

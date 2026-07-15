@@ -3,10 +3,17 @@ import type { HoleResult, MetricConfig, Round, SyncState } from '../types'
 import NumberField from './NumberField'
 import Segmented from './Segmented'
 import SyncBadge from './SyncBadge'
+import TeeResultGrid from './TeeResultGrid'
 import { formatToPar } from '../lib/analytics'
 
 const CLUBS = ['Driver','3-Wood','5-Wood','7-Wood','2-Hybrid','3-Hybrid','4-Hybrid','3-Iron','4-Iron','5-Iron','6-Iron','7-Iron','8-Iron','9-Iron','PW','GW','SW','LW','Putter','Other']
-const TEE_RESULTS = ['FIR','Miss L','Miss R','Short','Long','Trouble','Penalty','N/A']
+
+function calculateUpDown(chips: number | null, putts: number | null): HoleResult['up_down'] {
+  if (chips == null) return ''
+  if (chips === 0) return 'N/A'
+  if (putts == null) return ''
+  return chips === 1 && putts <= 1 ? 'Yes' : 'No'
+}
 
 interface Props {
   round: Round
@@ -40,20 +47,26 @@ export default function HoleEntry({
   const guests = round.players.filter((player) => !player.is_primary)
   const [editingHoleInfo, setEditingHoleInfo] = useState(false)
 
-  const update = (patch: Partial<HoleResult>) => onChange({
-    ...hole,
-    ...patch,
-    entering_zone_target: patch.par !== undefined && patch.par != null ? patch.par - 2 : hole.entering_zone_target,
-    entering_zone_point: patch.entering_zone_actual !== undefined || patch.par !== undefined
-      ? ((patch.entering_zone_actual ?? hole.entering_zone_actual) == null || (patch.par ?? hole.par) == null
-        ? null
-        : Number((patch.entering_zone_actual ?? hole.entering_zone_actual)! <= (patch.par ?? hole.par)! - 2))
-      : enteringPoint,
-    down_zone_point: patch.down_zone_actual !== undefined
-      ? (patch.down_zone_actual == null ? null : Number(patch.down_zone_actual <= 3))
-      : downPoint,
-    updated_at: new Date().toISOString(),
-  })
+  const update = (patch: Partial<HoleResult>) => {
+    const nextChips = patch.chips_pitches !== undefined ? patch.chips_pitches : hole.chips_pitches
+    const nextPutts = patch.putts !== undefined ? patch.putts : hole.putts
+    const recalculateUpDown = patch.chips_pitches !== undefined || patch.putts !== undefined
+    onChange({
+      ...hole,
+      ...patch,
+      entering_zone_target: patch.par !== undefined && patch.par != null ? patch.par - 2 : hole.entering_zone_target,
+      entering_zone_point: patch.entering_zone_actual !== undefined || patch.par !== undefined
+        ? ((patch.entering_zone_actual ?? hole.entering_zone_actual) == null || (patch.par ?? hole.par) == null
+          ? null
+          : Number((patch.entering_zone_actual ?? hole.entering_zone_actual)! <= (patch.par ?? hole.par)! - 2))
+        : enteringPoint,
+      down_zone_point: patch.down_zone_actual !== undefined
+        ? (patch.down_zone_actual == null ? null : Number(patch.down_zone_actual <= 3))
+        : downPoint,
+      up_down: recalculateUpDown ? calculateUpDown(nextChips, nextPutts) : (patch.up_down ?? hole.up_down),
+      updated_at: new Date().toISOString(),
+    })
+  }
 
   const updateGuestScore = (playerId: string, value: number | null) => update({
     player_scores: { ...(hole.player_scores ?? {}), [playerId]: value },
@@ -118,7 +131,7 @@ export default function HoleEntry({
         {(settings.teeClub || settings.teeResult) && <section className="card stack">
           <h2>Off the tee</h2>
           {settings.teeClub && <label className="field"><span>Club used</span><select value={hole.club_used_off_tee} onChange={(event) => update({ club_used_off_tee: event.target.value })}><option value="">Select club</option>{CLUBS.map((club) => <option key={club}>{club}</option>)}</select></label>}
-          {settings.teeResult && <label className="field"><span>Tee result</span><select value={hole.tee_result} onChange={(event) => update({ tee_result: event.target.value })}><option value="">Select result</option>{TEE_RESULTS.map((result) => <option key={result}>{result}</option>)}</select></label>}
+          {settings.teeResult && <TeeResultGrid value={hole.tee_result} onChange={(value) => update({ tee_result: value })} />}
         </section>}
 
         {settings.scoringZone && <section className="card stack">
@@ -130,7 +143,7 @@ export default function HoleEntry({
         {(settings.gir || settings.shortGame) && <section className="card stack">
           <h2>Approach & short game</h2>
           {settings.gir && <Segmented label="Green in regulation" value={hole.gir} options={['Yes','No','N/A'] as const} onChange={(value) => update({ gir: value })} />}
-          {settings.shortGame && <><NumberField label="Chips / pitches" value={hole.chips_pitches} min={0} max={10} onChange={(value) => update({ chips_pitches: value })} /><Segmented label="Up and down" value={hole.up_down} options={['Yes','No','N/A'] as const} onChange={(value) => update({ up_down: value })} /></>}
+          {settings.shortGame && <><NumberField label="Chips / pitches" value={hole.chips_pitches} min={0} max={10} onChange={(value) => update({ chips_pitches: value })} /><div className={`auto-result ${hole.up_down === 'Yes' ? 'auto-good' : hole.up_down === 'No' ? 'auto-bad' : ''}`}><span>Up and down</span><strong>{hole.up_down || 'Pending'}</strong><small>{hole.chips_pitches === 0 ? 'No short-game attempt' : hole.putts == null ? 'Enter putts to calculate' : 'Calculated from chips/pitches and putts'}</small></div></>}
         </section>}
 
         {(settings.putting || settings.inside4ft || settings.madePuttLength) && <section className="card stack">

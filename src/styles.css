@@ -134,7 +134,7 @@ h1,h2,h3,p { margin:0; } h1,h2,h3,.roundwise-brand strong { font-family:"Montser
 .inverse-brand strong { color:white; }.inverse-brand span { color:#E3BC5B; }
 .home-brand { align-items:center; }
 .home-hero { padding:8px 2px 2px; }
-.home-hero h1 { max-width:600px; }
+.home-hero h1 { max-width:600px; font-size:clamp(1.5rem,6.2vw,2.05rem); line-height:1.12; }
 .home-hero > p:last-child { margin-top:12px; max-width:590px; color:var(--slate); line-height:1.55; font-size:1.02rem; }
 .page-brand-header,.scorecard-header,.analytics-header { display:flex; align-items:center; gap:16px; }
 .page-brand-header > div,.scorecard-header > div,.analytics-header > div { min-width:0; }
@@ -298,13 +298,19 @@ h1,h2,h3,p { margin:0; } h1,h2,h3,.roundwise-brand strong { font-family:"Montser
 
 .traditional-scorecard thead th > strong { display:block; }
 .traditional-scorecard thead th > small { display:block; margin-top:4px; color:#D7E0EA; font-size:.62rem; font-weight:700; }
-.score-symbol { position:relative; isolation:isolate; display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; color:var(--navy); font-family:"Montserrat",sans-serif; font-weight:900; line-height:1; }
+.score-symbol { position:relative; isolation:isolate; display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; color:var(--navy); font-family:"Montserrat",sans-serif; font-weight:900; line-height:1; }
 .score-symbol::before,.score-symbol::after { content:""; position:absolute; z-index:-1; pointer-events:none; }
-.score-birdie::before,.score-eagle::before { inset:2px; border:2px solid var(--fairway); border-radius:50%; }
-.score-eagle::after { inset:-2px; border:2px solid #8BB294; border-radius:50%; }
-.score-bogey::before,.score-double-bogey::before { inset:2px; border:2px solid #B43D35; border-radius:2px; }
-.score-double-bogey::after { inset:-2px; border:2px solid #D28B85; border-radius:3px; }
-.score-symbol-compact { width:29px; height:29px; font-size:.85rem; }
+.score-birdie::before,.score-eagle::before,.score-triple-under::before { inset:5px; border:2px solid var(--fairway); border-radius:50%; background:#DCEFE1; }
+.score-eagle::before { inset:7px; }
+.score-eagle::after { inset:2px; border:2px solid #75A47F; border-radius:50%; }
+.score-triple-under::before { inset:9px; }
+.score-triple-under::after { inset:4px; border:2px solid #75A47F; border-radius:50%; box-shadow:0 0 0 2px #fff,0 0 0 4px #A9C8B0; }
+.score-bogey::before,.score-double-bogey::before,.score-triple-bogey::before { inset:5px; border:2px solid #B43D35; border-radius:2px; background:#F5DAD7; }
+.score-double-bogey::before { inset:7px; }
+.score-double-bogey::after { inset:2px; border:2px solid #D06F68; border-radius:3px; }
+.score-triple-bogey::before { inset:9px; }
+.score-triple-bogey::after { inset:4px; border:2px solid #D06F68; border-radius:3px; box-shadow:0 0 0 2px #fff,0 0 0 4px #E2A09B; }
+.score-symbol-compact { width:34px; height:34px; font-size:.82rem; }
 .score-empty { color:#9AA3AA; }
 .scorecard-table td > .score-symbol { margin:auto; }
 .scorecard-legend { display:flex; flex-wrap:wrap; justify-content:center; gap:14px; padding:12px; color:var(--slate); font-size:.72rem; font-weight:800; }
@@ -355,4 +361,35 @@ h1,h2,h3,p { margin:0; } h1,h2,h3,.roundwise-brand strong { font-family:"Montser
   .scorecard-identity { padding:13px; }
   .scorecard-title-row h1 { font-size:1.35rem; }
   .expanded-summary-grid { grid-template-columns:1fr 1fr; }
+}
+
+
+/* RoundWise v0.7 — visual tee grid, automatic up-and-down, and detail status colors */
+.cloud-sync-notice { margin-top:4px; margin-bottom:4px; }
+.tee-result-field { border:0; padding:0; margin:0; }
+.tee-result-field legend { color:var(--navy); font-weight:800; margin-bottom:3px; }
+.tee-result-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:10px; padding:9px; border-radius:18px; background:linear-gradient(180deg,#D9E7D9,#AFCBAF); box-shadow:inset 0 0 0 1px rgba(57,94,60,.16); }
+.tee-result-cell { min-height:68px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:7px 4px; border:1px solid rgba(13,30,58,.12); border-radius:12px; background:rgba(255,255,255,.82); color:var(--navy); box-shadow:0 3px 7px rgba(13,30,58,.05); }
+.tee-result-cell > span { font-size:1.25rem; line-height:1; }
+.tee-result-cell > strong { font-size:.69rem; line-height:1.05; }
+.tee-result-cell.active { border-color:var(--navy); background:var(--navy); color:white; box-shadow:0 0 0 2px rgba(200,162,74,.45),0 6px 12px rgba(13,30,58,.2); transform:translateY(-1px); }
+.tee-result-good:not(.active) { background:#E6F1E7; }
+.tee-result-hazard:not(.active) { background:#FAE9E6; color:#8B312B; }
+.tee-result-grid-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+.tee-result-grid-actions button { min-height:34px; padding:6px 12px; border:1px solid var(--line); border-radius:10px; background:white; color:var(--slate); font-size:.75rem; font-weight:800; }
+.tee-result-grid-actions button.active { background:var(--navy); color:white; }
+.auto-result { display:grid; grid-template-columns:1fr auto; gap:2px 10px; align-items:center; padding:12px; border:1px solid var(--line); border-radius:14px; background:#F3F5F4; }
+.auto-result span { color:var(--navy); font-weight:800; }
+.auto-result strong { padding:4px 9px; border-radius:999px; background:#E6EAEC; color:var(--slate); }
+.auto-result small { grid-column:1/-1; color:var(--slate); }
+.auto-result.auto-good strong { background:#D9EEE1; color:#276343; }
+.auto-result.auto-bad strong { background:#F6DDDD; color:#932F2A; }
+.detail-status { display:inline-flex; min-width:28px; align-items:center; justify-content:center; padding:3px 7px; border-radius:8px; color:var(--navy); font-weight:900; }
+.detail-status.detail-good { background:#D9EEE1; color:#276343; }
+.detail-status.detail-bad { background:#F6DDDD; color:#932F2A; }
+.detail-stat > .detail-status { align-self:flex-start; margin-top:3px; font-size:1rem; }
+.detail-stat strong .detail-status { margin:0 2px; font-size:.82em; vertical-align:middle; }
+@media (max-width:390px) {
+  .tee-result-cell { min-height:62px; }
+  .tee-result-cell > strong { font-size:.64rem; }
 }

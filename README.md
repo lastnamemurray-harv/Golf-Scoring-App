@@ -1,5 +1,9 @@
 # RoundWise Golf Performance Tracker
 
+## RoundWise v0.7
+
+Visual tee-shot location entry, automatic up-and-down calculation, color-coded detail results, expanded score symbols, and refined default settings.
+
 ## RoundWise v0.6
 
 This release adds per-player tee and handicap selection, gross/net scorecards, traditional circle-and-square scoring symbols, live cumulative score-to-par, an expanded round summary, and a horizontally scrollable hole-by-hole details matrix.

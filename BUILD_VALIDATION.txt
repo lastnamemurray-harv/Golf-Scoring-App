@@ -1,11 +1,13 @@
-RoundWise v0.6 multiplayer and scorecard enhancement
-Production build: PASS (TypeScript + Vite + PWA generateSW)
-Bundled courses: 74
-Bundled tee records: 67 across 15 verified-scorecard courses
-Bundled hole records: 270
-New migration: migration_v4_player_handicap_tees.sql
-Player tee/handicap normalization: PASS
-Gross/net handicap allocation: IMPLEMENTED
-Traditional circle/square score symbols: IMPLEMENTED
-Round summary expansion: IMPLEMENTED
-Details matrix: IMPLEMENTED
+RoundWise v0.7 visual tee-result and scorecard detail enhancement
+
+Validation completed: 2026-07-15
+- TypeScript project build passed
+- Vite production build passed
+- 104 modules transformed
+- PWA service worker generated
+- 13 precache entries generated
+- Public npm registry confirmed in package-lock.json
+- No Supabase schema migration required
+
+Build command:
+npm run build

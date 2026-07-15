@@ -108,7 +108,7 @@ export const DEFAULT_METRICS: MetricConfig = {
   madePuttLength: true,
   penalties: true,
   shortGame: true,
-  methodScore: true,
+  methodScore: false,
   notes: true,
 }
 

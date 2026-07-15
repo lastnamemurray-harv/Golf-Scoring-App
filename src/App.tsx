@@ -224,7 +224,6 @@ export default function App() {
         <h1>Turn every round into a plan for improvement.</h1>
         <p>Scorekeeping, detailed performance tracking, and focused insights in one mobile-first app.</p>
       </section>
-      {cloudMessage && <div className="notice warning"><strong>Cloud sync is not active</strong><span>{cloudMessage} The app will continue saving on this phone.</span></div>}
       {activeRound && <section className="card resume-card">
         <div><p className="eyebrow">Round in progress</p><h2>{activeRound.course_name}</h2><p>{completedCount}/{holes.length || 18} holes scored · {activeRound.tee_name}</p></div>
         <div className="resume-actions">
@@ -248,6 +247,7 @@ export default function App() {
           ? rounds.slice(0, 3).map((round) => <button className="history-row history-button" key={round.id} onClick={() => round.status === 'complete' ? openSavedScorecard(round) : resumeSavedRound(round.id)}><div><strong>{round.course_name}</strong><span>{round.date} · {round.tee_name}{round.course_rating != null && round.course_slope != null ? ` · ${round.course_rating}/${round.course_slope}` : ''}</span></div><b>{round.total_score ?? '—'}<small>{formatToPar(round.to_par ?? null)}</small></b></button>)
           : <p className="muted">Your rounds will appear here.</p>}
       </section>
+      {cloudMessage && <div className="notice warning cloud-sync-notice"><strong>Cloud sync is not active</strong><span>{cloudMessage} The app will continue saving on this phone.</span></div>}
     </main>}
 
     {screen === 'setup' && <RoundSetup courses={courses} courseHoles={courseHoles} courseTees={courseTees} settings={settings} onStart={startRound} onImport={() => setScreen('import')} />}
